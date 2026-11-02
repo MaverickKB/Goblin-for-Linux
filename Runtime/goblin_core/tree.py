@@ -68,8 +68,7 @@ class SummaryTree:
                 self._write_paths[file_level] = path
         # One startup replay seeds missing work. Runtime arrivals only touch
         # their leaf and the newly completed sibling pair.
-        for message in log.iter():
-            self.on_message(message)
+        self._replay_missing_leaves()
         with self._lock:
             for level, index in self._nodes:
                 self._queue_parent(level, index)
@@ -130,48 +129,103 @@ class SummaryTree:
                 return
         self.set_node(0, message.i, message.text)
 
-    def set_node(self, level, index, text, meta=None):
-        validate_node(level, index)
-        if not isinstance(text, str) or len(text.encode('utf-8')) > self.node_bytes:
-            raise ValueError('Summary exceeds node_bytes UTF-8 bytes')
-        metadata = self._json_metadata(meta) if meta is not None else {}
-        key = (level, index)
+    def _replay_missing_leaves(self):
+        """Collect every missing leaf, then write them in one pass per level."""
+        pending = []
+        for message in self.log.iter():
+            with self._lock:
+                self._message_count = max(self._message_count, message.i + 1)
+                if (0, message.i) in self._nodes:
+                    continue
+            if len(message.text.encode('utf-8')) > self.node_bytes:
+                with self.changed:
+                    self._queue((0, message.i), self._leaves)
+                continue
+            pending.append({'level': 0, 'index': message.i, 'text': message.text})
+        if pending:
+            self.set_nodes(pending)
+
+    def _path_for_level(self, level):
+        path = self._write_paths.get(level)
+        if path is not None:
+            return path
+        path = self.directory / f'{level}.jsonl'
+        if path.exists():
+            path = self.directory / f'{level}.{uuid.uuid4().hex}.jsonl'
+        self._write_paths[level] = path
+        return path
+
+    def set_nodes(self, records):
+        """Write many immutable nodes with one append and fsync per level."""
+        prepared = []
+        keys = []
         with self.changed:
-            if key in self._nodes:
-                if self._nodes[key] != text:
-                    raise ValueError('Built nodes are immutable')
-                if meta is not None and self._metadata[key] != metadata:
-                    raise ValueError('Built node metadata is immutable')
+            seen = set()
+            for record in records:
+                level = record['level']
+                index = record['index']
+                text = record['text']
+                meta = record.get('meta')
+                validate_node(level, index)
+                key = (level, index)
+                if key in seen:
+                    raise ValueError('Duplicate node in one batch')
+                seen.add(key)
+                if not isinstance(text, str) or len(text.encode('utf-8')) > self.node_bytes:
+                    raise ValueError('Summary exceeds node_bytes UTF-8 bytes')
+                metadata = self._json_metadata(meta) if meta is not None else {}
+                if key in self._nodes:
+                    if self._nodes[key] != text:
+                        raise ValueError('Built nodes are immutable')
+                    if meta is not None and self._metadata[key] != metadata:
+                        raise ValueError('Built node metadata is immutable')
+                    continue
+                if (index + 1) * (1 << level) > self._message_count:
+                    raise ValueError('Node extends beyond the chat')
+                if level > 0:
+                    left = (level - 1, index * 2)
+                    right = (level - 1, index * 2 + 1)
+                    if left not in self._nodes or right not in self._nodes:
+                        raise ValueError('Both children must be built first')
+                prepared.append({'level': level, 'index': index,
+                                 'text': text, 'meta': metadata})
+            if not prepared:
                 return
-            if (index + 1) * (1 << level) > self._message_count:
-                raise ValueError('Node extends beyond the chat')
-            if level > 0:
-                left = (level - 1, index * 2)
-                right = (level - 1, index * 2 + 1)
-                if left not in self._nodes or right not in self._nodes:
-                    raise ValueError('Both children must be built first')
-            record = {'level': level, 'index': index, 'text': text}
-            if metadata:
-                record['meta'] = metadata
-            path = self._write_paths.get(level)
-            if path is None:
-                path = self.directory / f'{level}.jsonl'
-                if path.exists():
-                    path = self.directory / f'{level}.{uuid.uuid4().hex}.jsonl'
-                self._write_paths[level] = path
-            with path.open('a', encoding='utf-8') as stream:
-                stream.write(json.dumps(record, ensure_ascii=False) + '\n')
-                stream.flush()
-                os.fsync(stream.fileno())
-            self._nodes[key] = text
-            self._metadata[key] = metadata
-            self._queued.discard(key)
-            self._queue_parent(level, index)
+            by_level = {}
+            for item in prepared:
+                by_level.setdefault(item['level'], []).append(item)
+            for level in sorted(by_level):
+                items = by_level[level]
+                items.sort(key=lambda item: item['index'])
+                path = self._path_for_level(level)
+                with path.open('a', encoding='utf-8') as stream:
+                    for item in items:
+                        record = {'level': item['level'], 'index': item['index'],
+                                  'text': item['text']}
+                        if item['meta']:
+                            record['meta'] = item['meta']
+                        stream.write(json.dumps(record, ensure_ascii=False) + '\n')
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                for item in items:
+                    key = (item['level'], item['index'])
+                    self._nodes[key] = item['text']
+                    self._metadata[key] = item['meta']
+                    self._queued.discard(key)
+                    keys.append(key)
+            for level, index in keys:
+                self._queue_parent(level, index)
             self.changed.notify_all()
             callbacks = tuple(self._subscribers)
-        # Never enter View while holding the tree lock.
-        for callback in callbacks:
-            callback(level, index)
+        for level, index in keys:
+            for callback in callbacks:
+                callback(level, index)
+
+    def set_node(self, level, index, text, meta=None):
+        record = {'level': level, 'index': index, 'text': text}
+        if meta is not None:
+            record['meta'] = meta
+        self.set_nodes([record])
 
     def prefix_built(self, upto_i):
         """Check the binary decomposition of a prefix, not every leaf."""
