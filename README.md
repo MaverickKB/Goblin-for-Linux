@@ -14,10 +14,19 @@ This port is in progress. The engine is vendored from Goblin for Mac 0.2.0. The 
 
 ## Install
 
-Download `Goblin_0.1.2_amd64.deb` from Releases and install it:
+Download `Goblin_0.1.2_amd64.deb` or `Goblin-0.1.2-x86_64.AppImage` from Releases.
+
+Debian:
 
 ```sh
 sudo apt install ./Goblin_0.1.2_amd64.deb
+```
+
+AppImage:
+
+```sh
+chmod +x Goblin-0.1.2-x86_64.AppImage
+./Goblin-0.1.2-x86_64.AppImage
 ```
 
 Run Goblin from the applications menu or with `goblin`. On first run, open Settings, set a model base URL and model, or sign in with xAI or OpenAI under Connections. Credentials live in the desktop keyring. Profile data lives in `~/.local/share/goblin`.
