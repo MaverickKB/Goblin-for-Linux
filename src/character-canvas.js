@@ -67,9 +67,18 @@ function drawTriangle(context, image, sourceX, destination) {
 
   context.save();
   context.beginPath();
-  context.moveTo(d0.x, d0.y);
-  context.lineTo(d1.x, d1.y);
-  context.lineTo(d2.x, d2.y);
+  const centerX = (d0.x + d1.x + d2.x) / 3;
+  const centerY = (d0.y + d1.y + d2.y) / 3;
+  const points = [d0, d1, d2].map((point) => {
+    const deltaX = point.x - centerX;
+    const deltaY = point.y - centerY;
+    const length = Math.hypot(deltaX, deltaY) || 1;
+    const grow = (length + 0.8) / length;
+    return { x: centerX + deltaX * grow, y: centerY + deltaY * grow };
+  });
+  context.moveTo(points[0].x, points[0].y);
+  context.lineTo(points[1].x, points[1].y);
+  context.lineTo(points[2].x, points[2].y);
   context.closePath();
   context.clip();
   context.transform(a, b, c, d, e, f);
