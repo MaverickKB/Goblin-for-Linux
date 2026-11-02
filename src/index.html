@@ -61,6 +61,16 @@
               <p>Set a model in Settings, then say hello.</p>
             </div>
           </div>
+          <div id="approval" class="approval" hidden>
+            <div class="approval-copy">
+              <strong id="approval-title">Goblin wants to use a tool</strong>
+              <pre id="approval-detail"></pre>
+            </div>
+            <div class="approval-actions">
+              <button id="approval-allow" class="primary" type="button">Allow</button>
+              <button id="approval-deny" type="button">Deny</button>
+            </div>
+          </div>
           <form id="composer" class="composer">
             <textarea id="input" rows="1" placeholder="Message Goblin" autocomplete="off"></textarea>
             <button id="send" type="submit">Send</button>

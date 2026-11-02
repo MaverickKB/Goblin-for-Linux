@@ -3,6 +3,7 @@
 import { connect, onEvent, request } from './api.js';
 import * as chat from './chat.js';
 import * as settings from './settings.js';
+import * as approvals from './approvals.js';
 
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status');
@@ -57,6 +58,7 @@ function applySnapshot(next) {
   if (next.setup_issue) {
     bannerText.textContent = next.setup_issue;
   }
+  approvals.sync(next.pending_approvals);
   updateBanner();
 }
 
@@ -74,6 +76,10 @@ function handleFrame(frame) {
   }
   if (frame.event === 'activity') {
     applyActivity(frame.data);
+    return;
+  }
+  if (frame.event === 'approval') {
+    approvals.show(frame.data);
     return;
   }
   if (frame.event === 'snapshot') {
@@ -169,6 +175,7 @@ async function boot() {
     await connect();
     onEvent(handleFrame);
     chat.initChat();
+    approvals.initApprovals();
     settings.initSettings({
       onSaved: (next) => {
         applySnapshot(next);

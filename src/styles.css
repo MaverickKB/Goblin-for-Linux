@@ -326,6 +326,44 @@ select {
   font-size: 12px;
 }
 
+.approval {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 28px 10px;
+  padding: 14px 16px;
+  border: 1px solid #6b5128;
+  border-radius: var(--radius);
+  background: #2a2114;
+}
+
+.approval-copy {
+  min-width: 0;
+}
+
+.approval pre {
+  max-height: 140px;
+  overflow: auto;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.approval-actions button:not(.primary) {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+}
+
 .composer {
   display: flex;
   gap: 12px;

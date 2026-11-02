@@ -11,13 +11,28 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 PORT = 18080
 
 
-def answer_for(payload):
-    messages = payload.get("messages") or []
-    last = ""
-    for message in messages:
+def last_user_text(payload):
+    text = ""
+    for message in payload.get("messages") or []:
         if message.get("role") == "user":
-            last = message.get("content") or ""
-    return "Linux model online. You said: " + last
+            text = message.get("content") or ""
+    return text
+
+
+def wants_shell(payload):
+    messages = payload.get("messages") or []
+    has_tool_result = any(message.get("role") == "tool" for message in messages)
+    return last_user_text(payload).lower().startswith("run shell") and not has_tool_result
+
+
+def shell_call_events():
+    function = {"name": "shell", "arguments": json.dumps({"command": "echo approved"})}
+    call = {"index": 0, "id": "call-1", "type": "function", "function": function}
+    chunk = {"choices": [{"delta": {"tool_calls": [call]}, "finish_reason": "tool_calls", "index": 0}]}
+    return [
+        "data: " + json.dumps(chunk) + "\n\n",
+        "data: [DONE]\n\n",
+    ]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -35,7 +50,30 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         length = int(self.headers.get("Content-Length", "0"))
         payload = json.loads(self.rfile.read(length) or b"{}")
-        text = answer_for(payload)
+        if wants_shell(payload) and payload.get("stream"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.end_headers()
+            for event in shell_call_events():
+                self.wfile.write(event.encode())
+                self.wfile.flush()
+            return
+        if wants_shell(payload):
+            body = json.dumps({
+                "choices": [{"message": {"content": "", "tool_calls": [{
+                    "id": "call-1", "type": "function",
+                    "function": {"name": "shell",
+                                 "arguments": json.dumps({"command": "echo approved"})}}]},
+                    "finish_reason": "tool_calls"}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        text = "Linux model online. You said: " + last_user_text(payload)
         if payload.get("stream"):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
