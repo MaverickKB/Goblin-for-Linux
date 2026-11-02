@@ -42,38 +42,40 @@ function deliver(frame) {
   }
 }
 
+function receive(payload) {
+  let frame;
+  try {
+    frame = typeof payload === 'string' ? JSON.parse(payload) : payload;
+  } catch (error) {
+    deliver({ event: 'frame_error', data: { message: error.message } });
+    return;
+  }
+  if (!frame || typeof frame !== 'object') {
+    deliver({ event: 'frame_error', data: { message: 'The engine sent a frame that was not an object.' } });
+    return;
+  }
+  if (frame.event) {
+    deliver(frame);
+    return;
+  }
+  const entry = pending.get(frame.id);
+  if (!entry) {
+    return;
+  }
+  clearTimeout(entry.timer);
+  pending.delete(frame.id);
+  if (frame.error) {
+    entry.reject(new Error(frame.error.message || 'The engine reported an error.'));
+  } else {
+    entry.resolve(frame.result);
+  }
+}
+
 export async function connect() {
   if (!tauri) {
     throw new Error('This page must run inside the Goblin app.');
   }
-  await tauri.event.listen('engine-frame', (event) => {
-    let frame;
-    try {
-      frame = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
-    } catch (error) {
-      deliver({ event: 'frame_error', data: { message: error.message } });
-      return;
-    }
-    if (!frame || typeof frame !== 'object') {
-      deliver({ event: 'frame_error', data: { message: 'The engine sent a frame that was not an object.' } });
-      return;
-    }
-    if (frame.event) {
-      deliver(frame);
-      return;
-    }
-    const entry = pending.get(frame.id);
-    if (!entry) {
-      return;
-    }
-    clearTimeout(entry.timer);
-    pending.delete(frame.id);
-    if (frame.error) {
-      entry.reject(new Error(frame.error.message || 'The engine reported an error.'));
-    } else {
-      entry.resolve(frame.result);
-    }
-  });
+  window.__goblinFrame = receive;
   await tauri.event.listen('engine-exit', () => {
     for (const entry of pending.values()) {
       clearTimeout(entry.timer);

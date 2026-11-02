@@ -126,8 +126,14 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
             match line {
                 Ok(text) => {
                     eprintln!("engine frame bytes={}", text.len());
-                    if let Err(error) = app_handle.emit("engine-frame", text) {
-                        eprintln!("engine emit failed: {error}");
+                    if let Some(window) = app_handle.get_webview_window("main") {
+                        let literal = serde_json::to_string(&text).unwrap_or_else(|_| "\"\"".to_string());
+                        let script = format!("window.__goblinFrame && window.__goblinFrame({literal});");
+                        if let Err(error) = window.eval(&script) {
+                            eprintln!("engine eval failed: {error}");
+                        }
+                    } else {
+                        eprintln!("engine frame dropped: no main window");
                     }
                 }
                 Err(_) => break,
