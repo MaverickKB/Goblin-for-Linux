@@ -77,6 +77,10 @@ svg {
   display: block;
 }
 
+body[data-renderer="canvas"] #character {
+  outline: 3px solid #ff0000;
+}
+
 .speech {
   position: absolute;
   left: 10px;
