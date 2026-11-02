@@ -52,6 +52,7 @@
           <span id="banner-text"></span>
           <button id="banner-action" type="button">Open settings</button>
         </div>
+        <pre id="boot-error" class="boot-error" hidden></pre>
 
         <section id="chat-view" class="view">
           <div id="transcript" class="transcript">
@@ -131,6 +132,21 @@
       </aside>
     </div>
 
-    <script type="module" src="main.js?v=3"></script>
+    <script>
+      window.addEventListener('error', function (event) {
+        var box = document.getElementById('boot-error');
+        if (!box) return;
+        box.hidden = false;
+        box.textContent = 'Startup error: ' + (event.message || 'a script failed to load');
+      });
+      window.addEventListener('unhandledrejection', function (event) {
+        var box = document.getElementById('boot-error');
+        if (!box) return;
+        var reason = event.reason;
+        box.hidden = false;
+        box.textContent = 'Startup error: ' + (reason && reason.message ? reason.message : String(reason));
+      });
+    </script>
+    <script type="module" src="main.js?v=3" onerror="document.getElementById('boot-error').hidden = false; document.getElementById('boot-error').textContent = 'Startup error: main.js failed to load';"></script>
   </body>
 </html>
