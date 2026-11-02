@@ -273,7 +273,6 @@ async function boot() {
     document.getElementById('composer').addEventListener('submit', () => {
       updateCharacter({ typing: false, thinking: true });
     });
-    initCharacter(characterCanvas, { avatar: 'rookie' }).catch(() => showStaticCharacter());
     settings.initSettings({
       onSaved: (next) => {
         applySnapshot(next);
@@ -285,7 +284,11 @@ async function boot() {
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);
     const initial = await request('bootstrap');
-    setStatus('Loaded ' + (initial ? Object.keys(initial).length : 'null'), 'busy');
+    modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
+    companionCaption.textContent = 'Char';
+    initCharacter(characterCanvas, { avatar: 'rookie' })
+      .then(() => { companionCaption.textContent = 'Live'; })
+      .catch(() => showStaticCharacter());
     applySnapshot(initial);
     await chat.loadHistory();
   } catch (error) {
