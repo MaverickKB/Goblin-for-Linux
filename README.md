@@ -44,13 +44,20 @@ npm run tauri dev
 - [x] Tauri shell, chat, history, composer
 - [x] Settings: personality, model connection, autonomy switch
 - [x] Tool approvals
-- [ ] Attachments
-- [ ] Connections and accounts
+- [x] Attachments: picker, drag and drop, transcript chips
+- [x] Connections panel and device sign-in flow
+- [x] Debian package
 - [ ] Animated avatars
 - [ ] Voice
 - [ ] Notifications and tray
 - [ ] Computer use controls
-- [ ] AppImage and deb packaging
+- [ ] Settings parity: autonomy floor, continuity, tools
+- [ ] AppImage
+- [ ] Bundled Python runtime
+
+## Build notes
+
+Build the package with `bash scripts/build-deb.sh`. Cargo can reuse a stale frontend asset bundle in debug builds; when UI changes do not appear, run `cargo clean -p goblin --manifest-path src-tauri/Cargo.toml` before rebuilding. Release builds embed the current `src/` tree.
 
 ## License
 

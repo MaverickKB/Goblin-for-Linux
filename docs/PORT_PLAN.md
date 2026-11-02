@@ -28,16 +28,16 @@ Linux changes in the engine so far:
 
 ## Phases
 
-1. Engine on Linux, tests green.
-2. Window, chat, history, composer, model settings, autonomy switch.
-3. Attachments: file picker, drag and drop, clipboard paste.
-4. Settings parity: connections, personality, autonomy floor, continuity, tools.
-5. Character: avatars, eyelids, standing art, motion, reactions.
-6. Voice: capture, playback, websocket, transcripts, tool calls.
-7. Accounts: device sign-in, model catalog, credential use.
-8. Notifications, tray, close-to-tray.
-9. Computer use: window list, screenshots, input, approvals.
-10. Packaging, bundled runtime, desktop entry, release checks.
+1. Engine on Linux, tests green. **Done.**
+2. Window, chat, history, composer, model settings, autonomy switch. **Done.**
+3. Attachments: file picker, drag and drop, transcript chips. **Done.**
+4. Settings parity: connections panel done; autonomy floor, continuity, and tools remain.
+5. Character: avatars, eyelids, standing art, motion, reactions. Not started.
+6. Voice: capture, playback, websocket, transcripts, tool calls. Not started.
+7. Accounts: device sign-in, model catalog, credential use. Panel and flow built; live provider sign-in not yet exercised.
+8. Notifications, tray, close-to-tray. Not started.
+9. Computer use: window list, screenshots, input, approvals. Engine tools exist; dedicated controls remain.
+10. Packaging, bundled runtime, desktop entry, release checks. Debian package installed and chatted; AppImage and bundled Python remain.
 
 Each phase is done only when it runs on the target and has a direct probe.
 
