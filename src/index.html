@@ -4,65 +4,51 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Goblin</title>
-    <link rel="stylesheet" href="styles.css?v=3" />
+    <link rel="stylesheet" href="styles.css?v=4" />
   </head>
   <body>
-    <div class="app">
-      <aside class="rail">
-        <div class="brand">
-          <img src="assets/avatar.png" alt="" />
-          <div>
-            <strong>Goblin</strong>
-            <small id="profile-home">Linux</small>
-          </div>
+    <div class="app" id="app">
+      <aside class="figure-column" data-tauri-drag-region>
+        <div class="speech" id="speech" hidden>
+          <button class="speech-bubble" id="speech-bubble" type="button">
+            <span id="speech-text"></span>
+          </button>
+          <svg class="speech-tail" viewBox="0 0 25 19" aria-hidden="true">
+            <path d="M0 0h25L18.75 19z" fill="#ffffff" stroke="#000000" stroke-width="2.5" />
+          </svg>
         </div>
-
-        <nav class="tabs">
-          <button class="tab active" data-tab="chat" type="button">Chat</button>
-          <button class="tab" data-tab="settings" type="button">Settings</button>
-        </nav>
-
-        <div class="autonomy-card">
-          <label class="switch">
-            <input id="autonomy-toggle" type="checkbox" />
-            <span class="track"></span>
-          </label>
-          <div>
-            <strong>Autonomy</strong>
-            <small id="autonomy-state">Off</small>
-          </div>
-        </div>
-
-        <div class="rail-foot">
-          <span class="dot" id="status-dot"></span>
-          <span id="status">Starting</span>
-        </div>
+        <canvas id="character" width="208" height="300" aria-hidden="true"></canvas>
       </aside>
 
-      <main class="main">
-        <header class="topbar">
-          <div>
-            <h1 id="header-title">Chat</h1>
-            <p id="header-sub">One continuing conversation</p>
+      <main class="board" id="board">
+        <header class="board-header">
+          <div class="identity">
+            <button class="profile-name" id="profile-name" type="button">
+              <span id="agent-name-label">Goblin</span>
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            </button>
+            <div class="model-name" id="model-name"></div>
+            <div class="turn-count" id="turn-count">0 turns, showing 0</div>
           </div>
-          <span class="chip" id="model-chip">No model</span>
+          <div class="drag-region" data-tauri-drag-region></div>
+          <button class="pill" id="autonomy-pill" type="button">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3 5.5 5.5 0 1 0 13 9.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+            <span id="autonomy-label">Autonomy off</span>
+          </button>
+          <button class="icon-button" id="settings-open" type="button" title="Settings">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" stroke="currentColor" stroke-width="1.4"/></svg>
+          </button>
+          <button class="icon-button" id="collapse" type="button" title="Collapse chat">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 2v4H2M10 14v-4h4M2 6l4-4M14 10l-4 4" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          </button>
         </header>
 
-        <div id="banner" class="banner" hidden>
-          <span id="banner-text"></span>
-          <button id="banner-action" type="button">Open settings</button>
-        </div>
-        <pre id="boot-error" class="boot-error" hidden></pre>
+        <div class="divider"></div>
 
-        <section id="chat-view" class="view">
-          <div id="transcript" class="transcript">
-            <div class="empty" id="empty-state">
-              <img src="assets/avatar.png" alt="" />
-              <h2>Goblin is waking up</h2>
-              <p>Set a model in Settings, then say hello.</p>
-            </div>
-          </div>
-          <div id="approval" class="approval" hidden>
+        <section class="chat-view" id="chat-view">
+          <div class="transcript" id="transcript"></div>
+
+          <div class="approval" id="approval" hidden>
             <div class="approval-copy">
               <strong id="approval-title">Goblin wants to use a tool</strong>
               <pre id="approval-detail"></pre>
@@ -72,33 +58,56 @@
               <button id="approval-deny" type="button">Deny</button>
             </div>
           </div>
-          <div id="attachments" class="attachments" hidden></div>
-          <form id="composer" class="composer">
-            <button id="attach" class="attach" type="button" title="Attach files">+</button>
-            <textarea id="input" rows="1" placeholder="Message Goblin" autocomplete="off"></textarea>
-            <button id="send" type="submit">Send</button>
+
+          <form class="composer" id="composer">
+            <div id="attachments" class="attachments" hidden></div>
+            <div class="live-strip" id="live-strip" hidden>
+              <span class="spinner"></span>
+              <span id="live-phase">Working</span>
+              <span id="live-detail" class="muted"></span>
+            </div>
+            <div class="composer-box">
+              <textarea id="input" rows="4" placeholder="Message Goblin" autocomplete="off"></textarea>
+              <div class="composer-actions">
+                <button id="attach" class="tool-button" type="button" title="Attach files">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 4.5l-4.7 4.7a2 2 0 1 0 2.8 2.8l5-5a3.2 3.2 0 0 0-4.5-4.5L3.4 8.2a4.3 4.3 0 0 0 6.1 6.1" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+                </button>
+                <button id="voice" class="tool-button" type="button" disabled title="Voice is not available in 0.1.0">
+                  <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6v4M5 4v8M8 2v12M11 5v6M14 7v2" stroke="currentColor" stroke-width="1.4"/></svg>
+                  Voice
+                </button>
+                <div class="composer-spacer"></div>
+                <button id="stop" class="tool-button" type="button" hidden>Stop</button>
+                <button id="send" class="send-button" type="submit">Send</button>
+              </div>
+            </div>
+            <div class="composer-hint" id="composer-hint">Return sends.</div>
           </form>
         </section>
 
-        <section id="settings-view" class="view" hidden>
-          <form id="settings-form" class="settings">
+        <section class="settings-view" id="settings-view" hidden>
+          <header class="settings-header">
+            <h2>Settings</h2>
+            <button id="settings-back" type="button">Back to chat</button>
+          </header>
+          <div class="settings-scroll">
             <div class="section">
-              <h2>Personality</h2>
+              <h3>Personality</h3>
               <label>Name
                 <input id="agent-name" type="text" />
               </label>
               <label>Instructions
-                <textarea id="user-instructions" rows="5"></textarea>
+                <textarea id="user-instructions" rows="4"></textarea>
               </label>
             </div>
 
             <div class="section">
-              <h2>Model</h2>
+              <h3>Model</h3>
               <label>Base URL
                 <input id="model-base-url" type="text" placeholder="http://127.0.0.1:8080/v1" />
               </label>
               <label>Model
-                <input id="model" type="text" placeholder="qwen3-32b" />
+                <input id="model" type="text" placeholder="model name" />
               </label>
               <label>Protocol
                 <select id="api-kind">
@@ -107,10 +116,26 @@
                   <option value="codex_responses">Codex responses</option>
                 </select>
               </label>
+              <div class="inline-actions">
+                <button class="primary" id="settings-save" type="button">Save settings</button>
+                <span id="settings-status" class="muted"></span>
+              </div>
             </div>
 
-            <div class="section wide">
-              <h2>Computer</h2>
+            <div class="section">
+              <h3>Connections</h3>
+              <div id="accounts" class="accounts">
+                <p class="muted">Checking providers.</p>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3>Continuity</h3>
+              <div id="continuity" class="info-list"></div>
+            </div>
+
+            <div class="section">
+              <h3>Computer</h3>
               <p class="muted">Inspect the desktop Goblin can see. Input tools still ask for approval.</p>
               <div class="inline-actions">
                 <button id="computer-shot" class="primary" type="button">Take screenshot</button>
@@ -120,8 +145,8 @@
               <div id="computer-output" class="computer-output"></div>
             </div>
 
-            <div class="section wide">
-              <h2>Tools</h2>
+            <div class="section">
+              <h3>Tools</h3>
               <p class="muted">Disabled tools stay registered but cannot run. Approval rules come from the engine.</p>
               <div id="tools-list" class="tools-list"></div>
               <div class="inline-actions">
@@ -130,8 +155,8 @@
               </div>
             </div>
 
-            <div class="section wide">
-              <h2>Autonomy floor</h2>
+            <div class="section">
+              <h3>Autonomy floor</h3>
               <p class="muted">Rules that let Goblin wake itself or stand down. The operator switch stays yours.</p>
               <textarea id="floor-definition" rows="10" spellcheck="false"></textarea>
               <div class="inline-actions">
@@ -139,37 +164,14 @@
                 <span id="floor-status" class="muted"></span>
               </div>
             </div>
-
-            <div class="section">
-              <h2>Continuity</h2>
-              <div id="continuity" class="info-list"></div>
-            </div>
-
-            <div class="section">
-              <h2>Connections</h2>
-              <div id="accounts" class="accounts">
-                <p class="muted">Checking providers.</p>
-              </div>
-            </div>
-
-            <div class="actions">
-              <button class="primary" type="submit">Save settings</button>
-              <span id="settings-status" class="muted"></span>
-            </div>
-          </form>
+          </div>
         </section>
-      </main>
 
-      <aside class="companion">
-        <div class="companion-stage">
-          <canvas id="character" aria-hidden="true"></canvas>
-        </div>
-        <div class="companion-caption" id="companion-caption">Idle</div>
-      </aside>
+        <pre id="boot-error" class="boot-error" hidden></pre>
+      </main>
     </div>
 
     <script>
-      document.getElementById('status').textContent = 'JS on';
       window.addEventListener('error', function (event) {
         var box = document.getElementById('boot-error');
         if (!box) return;
@@ -184,6 +186,6 @@
         box.textContent = 'Startup error: ' + (reason && reason.message ? reason.message : String(reason));
       });
     </script>
-    <script type="module" src="main.js?v=3" onerror="document.getElementById('boot-error').hidden = false; document.getElementById('boot-error').textContent = 'Startup error: main.js failed to load';"></script>
+    <script type="module" src="main.js?v=4" onerror="document.getElementById('boot-error').hidden = false; document.getElementById('boot-error').textContent = 'Startup error: main.js failed to load';"></script>
   </body>
 </html>

@@ -3,7 +3,6 @@
 import { request } from './api.js';
 
 const transcript = document.getElementById('transcript');
-const emptyState = document.getElementById('empty-state');
 const composer = document.getElementById('composer');
 const input = document.getElementById('input');
 const sendButton = document.getElementById('send');
@@ -15,6 +14,15 @@ let liveRow = null;
 let pendingLocalId = null;
 let pendingLocalText = '';
 let attached = [];
+let lastAgentText = '';
+
+export function rowCount() {
+  return rows.size;
+}
+
+export function lastReply() {
+  return lastAgentText;
+}
 
 function formatTime(value) {
   if (!value) {
@@ -153,7 +161,7 @@ function scrollToEnd(force) {
 }
 
 function showEmptyState() {
-  emptyState.hidden = rows.size > 0;
+  return;
 }
 
 export function addRow(row) {
@@ -167,6 +175,9 @@ export function addRow(row) {
   const article = buildRow(row);
   rows.set(row.id, article);
   transcript.append(article);
+  if (row.kind === 'agent' && row.text) {
+    lastAgentText = row.text;
+  }
   showEmptyState();
   scrollToEnd(stick);
 }
@@ -283,6 +294,7 @@ async function send(text) {
       meta.append(status);
     }
     appendNote(error.message);
+    window.dispatchEvent(new CustomEvent('goblin:send-failed', { detail: error.message }));
   } finally {
     sendButton.disabled = false;
     input.focus();

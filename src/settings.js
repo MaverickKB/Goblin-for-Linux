@@ -2,7 +2,7 @@
 
 import { request } from './api.js';
 
-const form = document.getElementById('settings-form');
+const saveButton = document.getElementById('settings-save');
 const status = document.getElementById('settings-status');
 const agentName = document.getElementById('agent-name');
 const instructions = document.getElementById('user-instructions');
@@ -73,7 +73,7 @@ async function save() {
 
 export function initSettings(options = {}) {
   onSaved = options.onSaved || null;
-  form.addEventListener('submit', (event) => {
+  saveButton.addEventListener('click', (event) => {
     event.preventDefault();
     save();
   });

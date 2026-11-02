@@ -1,4 +1,4 @@
-// Window wiring: boot the engine, route frames, switch views.
+// Window wiring: one transparent companion window, one engine.
 
 import { connect, listenTo, notify, onEvent, request } from './api.js';
 import * as chat from './chat.js';
@@ -10,20 +10,36 @@ import * as tools from './tools.js';
 import * as computer from './computer.js';
 import { initCharacter, setCharacterSignals } from './character.js';
 
-const statusDot = document.getElementById('status-dot');
-const statusText = document.getElementById('status');
-const modelChip = document.getElementById('model-chip');
-const autonomyToggle = document.getElementById('autonomy-toggle');
-const autonomyState = document.getElementById('autonomy-state');
-const banner = document.getElementById('banner');
-const bannerText = document.getElementById('banner-text');
-const bannerAction = document.getElementById('banner-action');
-const headerTitle = document.getElementById('header-title');
-const headerSub = document.getElementById('header-sub');
-const chatView = document.getElementById('chat-view');
-const settingsView = document.getElementById('settings-view');
+const app = document.getElementById('app');
+const board = document.getElementById('board');
 const characterCanvas = document.getElementById('character');
-const companionCaption = document.getElementById('companion-caption');
+const speech = document.getElementById('speech');
+const speechText = document.getElementById('speech-text');
+const speechBubble = document.getElementById('speech-bubble');
+const agentNameLabel = document.getElementById('agent-name-label');
+const modelName = document.getElementById('model-name');
+const turnCount = document.getElementById('turn-count');
+const autonomyPill = document.getElementById('autonomy-pill');
+const autonomyLabel = document.getElementById('autonomy-label');
+const settingsOpen = document.getElementById('settings-open');
+const settingsBack = document.getElementById('settings-back');
+const settingsView = document.getElementById('settings-view');
+const chatView = document.getElementById('chat-view');
+const collapseButton = document.getElementById('collapse');
+const liveStrip = document.getElementById('live-strip');
+const livePhase = document.getElementById('live-phase');
+const liveDetail = document.getElementById('live-detail');
+const composer = document.getElementById('composer');
+const input = document.getElementById('input');
+const sendButton = document.getElementById('send');
+const stopButton = document.getElementById('stop');
+const composerHint = document.getElementById('composer-hint');
+const bootError = document.getElementById('boot-error');
+
+let snapshot = null;
+let collapsed = false;
+let busy = false;
+let completionTimer = 0;
 
 let characterSignals = {
   listening: false,
@@ -41,60 +57,68 @@ let characterSignals = {
   completed: false,
 };
 
-let characterStage = 'starting';
-
-function updateCompanionCaption() {
-  let text = 'Idle';
-  if (characterSignals.error) {
-    text = 'Concerned';
-  } else if (characterSignals.approval) {
-    text = 'Waiting for you';
-  } else if (characterSignals.working) {
-    text = 'Working';
-  } else if (characterSignals.thinking) {
-    text = 'Thinking';
-  } else if (characterSignals.speaking) {
-    text = 'Speaking';
-  } else if (characterSignals.typing) {
-    text = 'Listening';
+function updateSpeech() {
+  if (!collapsed) {
+    speech.hidden = true;
+    return;
   }
-  companionCaption.textContent = characterStage === 'failed' ? 'Static' : text;
+  let text = chat.lastReply();
+  if (characterSignals.approval) {
+    text = 'I need your approval.';
+  } else if (busy) {
+    text = livePhase.textContent || 'Working';
+  }
+  if (!text) {
+    text = 'Open the chat.';
+  }
+  speechText.textContent = text;
+  speech.hidden = false;
 }
 
 function updateCharacter(partial) {
   characterSignals = { ...characterSignals, ...partial };
   setCharacterSignals(partial);
-  updateCompanionCaption();
+  updateSpeech();
 }
 
-let snapshot = null;
-let activeTab = 'chat';
-let completionTimer = 0;
-
-function showStaticCharacter() {
-  characterCanvas.hidden = true;
-  const image = document.createElement('img');
-  image.src = 'assets/avatar.png';
-  image.alt = '';
-  characterCanvas.parentElement.append(image);
-  companionCaption.textContent = 'Static';
-}
-
-function updateBanner() {
-  if (snapshot && snapshot.setup_issue && activeTab === 'chat') {
-    bannerText.textContent = snapshot.setup_issue;
-    banner.hidden = false;
-    return;
+function updateMeta() {
+  const count = chat.rowCount();
+  if (snapshot && snapshot.model) {
+    modelName.textContent = snapshot.model;
   }
-  banner.hidden = true;
+  if (snapshot && snapshot.settings && snapshot.settings.agent_name) {
+    agentNameLabel.textContent = snapshot.settings.agent_name;
+  }
+  turnCount.textContent = count + ' turns, showing ' + count;
 }
 
-function setStatus(text, tone) {
-  statusText.textContent = text;
-  statusDot.className = 'dot';
-  if (tone) {
-    statusDot.classList.add(tone);
+function setLive(text, detail) {
+  liveStrip.hidden = false;
+  livePhase.textContent = text;
+  liveDetail.textContent = detail || '';
+  updateSpeech();
+}
+
+function clearLive() {
+  liveStrip.hidden = true;
+  livePhase.textContent = '';
+  liveDetail.textContent = '';
+}
+
+function setBusy(next) {
+  busy = next;
+  stopButton.hidden = !next;
+  sendButton.disabled = false;
+  composerHint.textContent = next ? 'Return steers the running turn.' : 'Return sends.';
+  if (!next) {
+    clearLive();
   }
+  updateSpeech();
+}
+
+function showBootError(message) {
+  bootError.hidden = false;
+  bootError.textContent = message;
 }
 
 function applySnapshot(next) {
@@ -103,34 +127,34 @@ function applySnapshot(next) {
   }
   snapshot = next;
   settings.applySnapshot(next);
-  autonomyToggle.checked = Boolean(next.autonomy && next.autonomy.enabled);
-  autonomyState.textContent = next.autonomy && next.autonomy.enabled ? 'On' : 'Off';
-  modelChip.textContent = next.model || 'No model';
-  modelChip.title = next.settings ? next.settings.model_base_url || '' : '';
-  if (next.busy) {
-    setStatus('Working', 'busy');
-  } else if (next.setup_issue) {
-    setStatus('Needs setup', 'error');
-  } else {
-    setStatus('Ready', 'ready');
-  }
-  if (next.setup_issue) {
-    bannerText.textContent = next.setup_issue;
-  }
+  const autonomous = Boolean(next.autonomy && next.autonomy.enabled);
+  autonomyLabel.textContent = autonomous ? 'Autonomy on' : 'Autonomy off';
+  autonomyPill.classList.toggle('on', autonomous);
   approvals.sync(next.pending_approvals);
   floor.renderContinuity(next.memory);
   tools.renderTools(next);
   updateCharacter({
     approval: (next.pending_approvals || []).length > 0,
-    autonomy: Boolean(next.autonomy && next.autonomy.enabled),
+    autonomy: autonomous,
   });
-  updateBanner();
+  if (next.model) {
+    modelName.textContent = next.model;
+  }
+  if (next.settings && next.settings.agent_name) {
+    agentNameLabel.textContent = next.settings.agent_name;
+  }
+  if (next.busy) {
+    setBusy(true);
+    setLive(next.activity || 'Working');
+  }
+  updateMeta();
 }
 
 function handleFrame(frame) {
   if (frame.event === 'stream') {
     chat.appendStream(frame.data.text || '');
     updateCharacter({ speaking: true, thinking: false, speechLevel: 0.5 });
+    setLive('Speaking');
     return;
   }
   if (frame.event === 'message') {
@@ -138,6 +162,7 @@ function handleFrame(frame) {
     if (frame.data.kind === 'agent') {
       chat.clearStream();
       updateCharacter({ speaking: false, thinking: false, working: false, speechLevel: 0, completed: true });
+      setBusy(false);
       if (!document.hasFocus() && frame.data.text) {
         notify('Goblin replied', String(frame.data.text).slice(0, 140));
       }
@@ -147,6 +172,7 @@ function handleFrame(frame) {
       chat.clearStream();
       updateCharacter({ thinking: true, speaking: false });
     }
+    updateMeta();
     return;
   }
   if (frame.event === 'activity') {
@@ -154,7 +180,7 @@ function handleFrame(frame) {
     return;
   }
   if (frame.event === 'frame_error') {
-    setStatus(frame.data.message, 'error');
+    showBootError(frame.data.message);
     return;
   }
   if (frame.event === 'approval') {
@@ -168,7 +194,8 @@ function handleFrame(frame) {
     return;
   }
   if (frame.event === 'exit') {
-    setStatus('Engine stopped', 'error');
+    showBootError('The local engine stopped.');
+    setBusy(false);
     updateCharacter({ error: true, thinking: false, working: false, speaking: false });
   }
 }
@@ -176,7 +203,7 @@ function handleFrame(frame) {
 function applyActivity(data) {
   const phase = data.phase || '';
   if (phase === 'ready') {
-    setStatus(snapshot && snapshot.setup_issue ? 'Needs setup' : 'Ready', 'ready');
+    setLive('Ready');
     updateCharacter({ working: false, thinking: false });
     return;
   }
@@ -184,13 +211,13 @@ function applyActivity(data) {
     return;
   }
   if (phase === 'model_start') {
-    setStatus('Thinking', 'busy');
+    setLive('Thinking');
     updateCharacter({ thinking: true, working: false });
     return;
   }
   if (phase === 'tool') {
     const toolName = String(data.text || '').trim().split(/\s+/)[0] || 'tool';
-    setStatus(data.text ? 'Using ' + data.text : 'Using a tool', 'busy');
+    setLive('Working', data.text || '');
     updateCharacter({
       working: true,
       thinking: false,
@@ -200,52 +227,49 @@ function applyActivity(data) {
     return;
   }
   if (phase === 'compacting') {
-    setStatus('Compacting history', 'busy');
+    setLive('Compacting history');
     updateCharacter({ working: true });
     return;
   }
   if (phase === 'status' && data.text) {
-    setStatus(data.text, 'busy');
+    setLive(data.text);
   }
 }
 
 function openSettings() {
-  activeTab = 'settings';
-  for (const tab of document.querySelectorAll('.tab')) {
-    tab.classList.toggle('active', tab.dataset.tab === 'settings');
-  }
   chatView.hidden = true;
   settingsView.hidden = false;
-  headerTitle.textContent = 'Settings';
-  headerSub.textContent = 'Personality and model connection';
-  updateBanner();
+  if (snapshot) {
+    floor.loadFloor(snapshot);
+  }
 }
 
-function wireTabs() {
-  for (const tab of document.querySelectorAll('.tab')) {
-    tab.addEventListener('click', () => {
-      const name = tab.dataset.tab;
-      activeTab = name;
-      for (const other of document.querySelectorAll('.tab')) {
-        other.classList.toggle('active', other === tab);
-      }
-      chatView.hidden = name !== 'chat';
-      settingsView.hidden = name !== 'settings';
-      headerTitle.textContent = name === 'chat' ? 'Chat' : 'Settings';
-      headerSub.textContent =
-        name === 'chat' ? 'One continuing conversation' : 'Personality and model connection';
-      updateBanner();
-    });
+function closeSettings() {
+  settingsView.hidden = true;
+  chatView.hidden = false;
+}
+
+async function setCollapsed(next) {
+  collapsed = next;
+  app.classList.toggle('collapsed', next);
+  if (next) {
+    closeSettings();
+  }
+  updateSpeech();
+  try {
+    await window.__TAURI__.core.invoke('set_window_mode', { collapsed: next });
+  } catch (error) {
+    showBootError(error.message);
   }
 }
 
 function wireAutonomy() {
-  autonomyToggle.addEventListener('change', async () => {
+  autonomyPill.addEventListener('click', async () => {
     if (!snapshot) {
       return;
     }
-    const desired = autonomyToggle.checked;
-    autonomyToggle.disabled = true;
+    const desired = !(snapshot.autonomy && snapshot.autonomy.enabled);
+    autonomyPill.disabled = true;
     try {
       const next = await request('autonomy/set', {
         enabled: desired,
@@ -253,23 +277,16 @@ function wireAutonomy() {
       });
       applySnapshot(next);
     } catch (error) {
-      autonomyToggle.checked = !desired;
-      bannerText.textContent = error.message;
-      banner.hidden = false;
+      showBootError(error.message);
     } finally {
-      autonomyToggle.disabled = false;
+      autonomyPill.disabled = false;
     }
   });
 }
 
 async function boot() {
   try {
-    setStatus('Connecting', 'busy');
-    window.__TAURI__.event.listen('ui-probe', (event) => {
-      setStatus('Probe ' + event.payload, 'busy');
-    });
     await connect();
-    setStatus('Loading', 'busy');
     onEvent(handleFrame);
     await listenTo('tauri://drag-drop', (event) => {
       const paths = (event.payload && event.payload.paths) || [];
@@ -277,43 +294,52 @@ async function boot() {
     });
     chat.initChat();
     approvals.initApprovals();
-    const input = document.getElementById('input');
-    input.addEventListener('focus', () => updateCharacter({ listening: true }));
-    input.addEventListener('blur', () => updateCharacter({ listening: false, typing: false }));
-    input.addEventListener('input', () => updateCharacter({ typing: input.value.trim().length > 0 }));
-    document.getElementById('composer').addEventListener('submit', () => {
-      updateCharacter({ typing: false, thinking: true });
-    });
     settings.initSettings({
-      onSaved: (next) => {
-        applySnapshot(next);
-        chat.appendNote('Settings saved.');
-      },
+      onSaved: (next) => applySnapshot(next),
     });
     connections.initConnections();
     floor.initFloor();
     tools.initTools();
     computer.initComputer();
-    wireTabs();
     wireAutonomy();
-    bannerAction.addEventListener('click', openSettings);
+
+    settingsOpen.addEventListener('click', openSettings);
+    settingsBack.addEventListener('click', closeSettings);
+    collapseButton.addEventListener('click', () => setCollapsed(!collapsed));
+    speechBubble.addEventListener('click', () => setCollapsed(false));
+
+    input.addEventListener('focus', () => updateCharacter({ listening: true }));
+    input.addEventListener('blur', () => updateCharacter({ listening: false, typing: false }));
+    input.addEventListener('input', () => updateCharacter({ typing: input.value.trim().length > 0 }));
+    composer.addEventListener('submit', () => {
+      updateCharacter({ typing: false, thinking: true });
+      setBusy(true);
+      setLive('Thinking');
+    });
+    stopButton.addEventListener('click', async () => {
+      try {
+        await request('chat/stop', {});
+      } catch (error) {
+        showBootError(error.message);
+      }
+    });
+    window.addEventListener('goblin:send-failed', (event) => {
+      setBusy(false);
+      showBootError(event.detail || 'The message could not be sent.');
+    });
+
+    initCharacter(characterCanvas, { avatar: 'rookie' }).catch((error) => {
+      chat.appendNote('Character: ' + error.message);
+    });
+
     const initial = await request('bootstrap');
-    initCharacter(characterCanvas, { avatar: 'rookie' })
-      .then(() => {
-        characterStage = 'live';
-        updateCompanionCaption();
-      })
-      .catch((error) => {
-        characterStage = 'failed';
-        updateCompanionCaption();
-        chat.appendNote('Character: ' + error.message);
-        showStaticCharacter();
-      });
     applySnapshot(initial);
     floor.loadFloor(initial);
     await chat.loadHistory();
+    updateMeta();
+    updateSpeech();
   } catch (error) {
-    setStatus(error.message, 'error');
+    showBootError(error.message);
     chat.appendNote(error.message);
   }
 }

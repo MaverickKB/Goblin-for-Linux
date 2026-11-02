@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
-use tauri::{Manager, State};
+use tauri::{LogicalPosition, LogicalSize, Manager, State};
 
 struct EngineState {
     stdin: Mutex<Option<ChildStdin>>,
@@ -85,6 +85,27 @@ fn notify(title: String, body: String) -> Result<(), String> {
         .arg(title)
         .arg(body)
         .spawn()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+fn set_window_mode(window: tauri::WebviewWindow, collapsed: bool) -> Result<(), String> {
+    let target = if collapsed {
+        LogicalSize::new(264.0, 600.0)
+    } else {
+        LogicalSize::new(898.0, 674.0)
+    };
+    let position = window.outer_position().map_err(|error| error.to_string())?;
+    let size = window.outer_size().map_err(|error| error.to_string())?;
+    let bottom = position.y as f64 + size.height as f64;
+    let x = position.x as f64;
+    let y = bottom - target.height;
+    window
+        .set_size(target)
+        .map_err(|error| error.to_string())?;
+    window
+        .set_position(LogicalPosition::new(x, y))
         .map_err(|error| error.to_string())?;
     Ok(())
 }
@@ -209,7 +230,7 @@ fn main() {
             app.manage(state);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url, notify])
+        .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url, notify, set_window_mode])
         .build(tauri::generate_context!())
         .expect("Goblin could not build its window")
         .run(|app_handle, event| {

@@ -11,10 +11,12 @@
     "windows": [
       {
         "title": "Goblin",
-        "width": 1100,
-        "height": 780,
-        "minWidth": 760,
-        "minHeight": 560
+        "width": 898,
+        "height": 674,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "shadow": false
       }
     ],
     "security": {
