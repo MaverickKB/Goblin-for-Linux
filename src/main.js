@@ -5,6 +5,7 @@ import * as chat from './chat.js';
 import * as settings from './settings.js';
 import * as approvals from './approvals.js';
 import * as connections from './connections.js';
+import * as floor from './floor.js';
 import { initCharacter, setCharacterSignals } from './character.js';
 
 const statusDot = document.getElementById('status-dot');
@@ -115,6 +116,7 @@ function applySnapshot(next) {
     bannerText.textContent = next.setup_issue;
   }
   approvals.sync(next.pending_approvals);
+  floor.renderContinuity(next.memory);
   updateCharacter({
     approval: (next.pending_approvals || []).length > 0,
     autonomy: Boolean(next.autonomy && next.autonomy.enabled),
@@ -282,6 +284,7 @@ async function boot() {
       },
     });
     connections.initConnections();
+    floor.initFloor();
     wireTabs();
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);
@@ -298,6 +301,7 @@ async function boot() {
         showStaticCharacter();
       });
     applySnapshot(initial);
+    floor.loadFloor(initial);
     await chat.loadHistory();
   } catch (error) {
     setStatus(error.message, 'error');
