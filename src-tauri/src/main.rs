@@ -168,12 +168,26 @@ fn main() {
             match resolver.get("index.html".to_string()) {
                 Some(asset) => {
                     let text = String::from_utf8_lossy(&asset.bytes);
+                    let main = resolver.get("main.js".to_string());
+                    let api = resolver.get("api.js".to_string());
+                    let main_text = main
+                        .as_ref()
+                        .map(|item| String::from_utf8_lossy(&item.bytes).to_string())
+                        .unwrap_or_default();
+                    let api_text = api
+                        .as_ref()
+                        .map(|item| String::from_utf8_lossy(&item.bytes).to_string())
+                        .unwrap_or_default();
                     eprintln!(
-                        "ui asset index bytes={} boot_error={} companion={} character_js={}",
+                        "ui asset index bytes={} boot_error={} companion={} character_js={} main_bytes={} main_probe={} main_loaded={} api_frame_error={}",
                         asset.bytes.len(),
                         text.contains("boot-error"),
                         text.contains("companion"),
-                        resolver.get("character.js".to_string()).is_some()
+                        resolver.get("character.js".to_string()).is_some(),
+                        main_text.len(),
+                        main_text.contains("ui-probe"),
+                        main_text.contains("Loaded "),
+                        api_text.contains("frame_error")
                     );
                 }
                 None => eprintln!("ui asset index missing"),
