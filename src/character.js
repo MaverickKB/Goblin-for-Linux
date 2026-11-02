@@ -1,10 +1,11 @@
 // Character renderer: the same rig, mesh deformation, face shader and motion
 // constants as the Mac app, drawn with WebGL instead of Metal.
 
+import { RIGS } from './character-rigs.js';
+
 const COLUMNS = 40;
 const ROWS = 80;
 
-const RIG_URL = 'assets/character/character-rigs.json';
 const STANDING_URL = 'assets/character/standing/';
 const EYELIDS_URL = 'assets/character/eyelids/';
 
@@ -626,6 +627,15 @@ function loadImage(url) {
   });
 }
 
+function withTimeout(promise, milliseconds, message) {
+  return Promise.race([
+    promise,
+    new Promise((resolve, reject) => {
+      setTimeout(() => reject(new Error(message)), milliseconds);
+    }),
+  ]);
+}
+
 function compileShader(gl, type, source) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, source);
@@ -684,13 +694,14 @@ function fitCanvas(canvas) {
 
 export async function initCharacter(canvas, options = {}) {
   const avatar = options.avatar || 'rookie';
-  const rigs = await fetch(RIG_URL).then((response) => response.json());
-  const rig = rigs.avatars[avatar];
+  const rig = RIGS.avatars[avatar];
   if (!rig) {
     throw new Error('No character rig for ' + avatar);
   }
-  const standing = await loadImage(STANDING_URL + avatar + '.png');
-  const eyelids = await loadImage(EYELIDS_URL + avatar + '.png');
+  const standing = await withTimeout(loadImage(STANDING_URL + avatar + '.png'), 6000,
+    'The standing art did not load.');
+  const eyelids = await withTimeout(loadImage(EYELIDS_URL + avatar + '.png'), 6000,
+    'The eyelid art did not load.');
 
   const gl = canvas.getContext('webgl', {
     alpha: true,
