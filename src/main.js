@@ -5,6 +5,7 @@ import * as chat from './chat.js';
 import * as settings from './settings.js';
 import * as approvals from './approvals.js';
 import * as connections from './connections.js';
+import { initCharacter, setCharacterSignals } from './character.js';
 
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status');
@@ -18,9 +19,61 @@ const headerTitle = document.getElementById('header-title');
 const headerSub = document.getElementById('header-sub');
 const chatView = document.getElementById('chat-view');
 const settingsView = document.getElementById('settings-view');
+const characterCanvas = document.getElementById('character');
+const companionCaption = document.getElementById('companion-caption');
+
+let characterSignals = {
+  listening: false,
+  thinking: false,
+  working: false,
+  speaking: false,
+  attention: true,
+  speechLevel: 0,
+  error: false,
+  approval: false,
+  autonomy: false,
+  typing: false,
+  toolKind: '',
+  activityToken: 0,
+  completed: false,
+};
+
+function updateCompanionCaption() {
+  let text = 'Idle';
+  if (characterSignals.error) {
+    text = 'Concerned';
+  } else if (characterSignals.approval) {
+    text = 'Waiting for you';
+  } else if (characterSignals.working) {
+    text = 'Working';
+  } else if (characterSignals.thinking) {
+    text = 'Thinking';
+  } else if (characterSignals.speaking) {
+    text = 'Speaking';
+  } else if (characterSignals.typing) {
+    text = 'Listening';
+  }
+  companionCaption.textContent = text;
+}
+
+function updateCharacter(partial) {
+  characterSignals = { ...characterSignals, ...partial };
+  setCharacterSignals(partial);
+  updateCompanionCaption();
+}
 
 let snapshot = null;
 let activeTab = 'chat';
+let completionTimer = 0;
+
+function showStaticCharacter() {
+  characterCanvas.hidden = true;
+  const image = document.createElement('img');
+  image.src = 'assets/avatar.png';
+  image.alt = '';
+  characterCanvas.parentElement.append(image);
+  companionCaption.textContent = 'Static';
+}
 
 function updateBanner() {
   if (snapshot && snapshot.setup_issue && activeTab === 'chat') {
@@ -60,18 +113,29 @@ function applySnapshot(next) {
     bannerText.textContent = next.setup_issue;
   }
   approvals.sync(next.pending_approvals);
+  updateCharacter({
+    approval: (next.pending_approvals || []).length > 0,
+    autonomy: Boolean(next.autonomy && next.autonomy.enabled),
+  });
   updateBanner();
 }
 
 function handleFrame(frame) {
   if (frame.event === 'stream') {
     chat.appendStream(frame.data.text || '');
+    updateCharacter({ speaking: true, thinking: false, speechLevel: 0.5 });
     return;
   }
   if (frame.event === 'message') {
     chat.addRow(frame.data);
-    if (frame.data.kind === 'agent' || frame.data.kind === 'thought') {
+    if (frame.data.kind === 'agent') {
       chat.clearStream();
+      updateCharacter({ speaking: false, thinking: false, working: false, speechLevel: 0, completed: true });
+      clearTimeout(completionTimer);
+      completionTimer = setTimeout(() => updateCharacter({ completed: false }), 1400);
+    } else if (frame.data.kind === 'thought') {
+      chat.clearStream();
+      updateCharacter({ thinking: true, speaking: false });
     }
     return;
   }
@@ -81,6 +145,7 @@ function handleFrame(frame) {
   }
   if (frame.event === 'approval') {
     approvals.show(frame.data);
+    updateCharacter({ approval: true });
     return;
   }
   if (frame.event === 'snapshot') {
@@ -89,6 +154,7 @@ function handleFrame(frame) {
   }
   if (frame.event === 'exit') {
     setStatus('Engine stopped', 'error');
+    updateCharacter({ error: true, thinking: false, working: false, speaking: false });
   }
 }
 
@@ -96,6 +162,7 @@ function applyActivity(data) {
   const phase = data.phase || '';
   if (phase === 'ready') {
     setStatus(snapshot && snapshot.setup_issue ? 'Needs setup' : 'Ready', 'ready');
+    updateCharacter({ working: false, thinking: false });
     return;
   }
   if (phase === 'heartbeat') {
@@ -103,14 +170,23 @@ function applyActivity(data) {
   }
   if (phase === 'model_start') {
     setStatus('Thinking', 'busy');
+    updateCharacter({ thinking: true, working: false });
     return;
   }
   if (phase === 'tool') {
+    const toolName = String(data.text || '').trim().split(/\s+/)[0] || 'tool';
     setStatus(data.text ? 'Using ' + data.text : 'Using a tool', 'busy');
+    updateCharacter({
+      working: true,
+      thinking: false,
+      toolKind: toolName,
+      activityToken: characterSignals.activityToken + 1,
+    });
     return;
   }
   if (phase === 'compacting') {
     setStatus('Compacting history', 'busy');
+    updateCharacter({ working: true });
     return;
   }
   if (phase === 'status' && data.text) {
@@ -181,6 +257,14 @@ async function boot() {
     });
     chat.initChat();
     approvals.initApprovals();
+    const input = document.getElementById('input');
+    input.addEventListener('focus', () => updateCharacter({ listening: true }));
+    input.addEventListener('blur', () => updateCharacter({ listening: false, typing: false }));
+    input.addEventListener('input', () => updateCharacter({ typing: input.value.trim().length > 0 }));
+    document.getElementById('composer').addEventListener('submit', () => {
+      updateCharacter({ typing: false, thinking: true });
+    });
+    initCharacter(characterCanvas, { avatar: 'rookie' }).catch(() => showStaticCharacter());
     settings.initSettings({
       onSaved: (next) => {
         applySnapshot(next);
