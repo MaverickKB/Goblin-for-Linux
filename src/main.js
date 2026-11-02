@@ -287,6 +287,8 @@ async function boot() {
     bannerAction.addEventListener('click', openSettings);
     const initial = await request('bootstrap');
     modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
+    characterStage = 'called';
+    updateCompanionCaption();
     initCharacter(characterCanvas, { avatar: 'rookie' })
       .then(() => {
         characterStage = 'live';
