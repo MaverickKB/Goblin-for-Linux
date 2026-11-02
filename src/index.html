@@ -133,6 +133,7 @@
     </div>
 
     <script>
+      document.getElementById('status').textContent = 'JS on';
       window.addEventListener('error', function (event) {
         var box = document.getElementById('boot-error');
         if (!box) return;
