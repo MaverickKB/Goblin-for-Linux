@@ -49,7 +49,7 @@ function fitCanvas(canvas) {
   }
 }
 
-function drawTriangle(context, image, sourceX, sourceY, destination) {
+function drawTriangle(context, image, sourceX, destination) {
   const [s0, s1, s2] = sourceX;
   const [d0, d1, d2] = destination;
   const denominator = s0.x * (s1.y - s2.y) + s1.x * (s2.y - s0.y) + s2.x * (s0.y - s1.y);
