@@ -285,10 +285,12 @@ async function boot() {
     bannerAction.addEventListener('click', openSettings);
     const initial = await request('bootstrap');
     modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
-    companionCaption.textContent = 'Char';
     initCharacter(characterCanvas, { avatar: 'rookie' })
       .then(() => { companionCaption.textContent = 'Live'; })
-      .catch(() => showStaticCharacter());
+      .catch((error) => {
+        chat.appendNote('Character: ' + error.message);
+        showStaticCharacter();
+      });
     applySnapshot(initial);
     await chat.loadHistory();
   } catch (error) {
