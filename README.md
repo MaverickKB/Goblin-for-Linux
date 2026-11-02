@@ -47,7 +47,8 @@ npm run tauri dev
 - [x] Attachments: picker, drag and drop, transcript chips
 - [x] Connections panel and device sign-in flow
 - [x] Debian package
-- [ ] Animated avatars
+- [x] Character: standing art with breathing, sway, glances, and blinks (Canvas 2D)
+- [ ] Character mesh deformation and face shader (WebGL)
 - [ ] Voice
 - [ ] Notifications and tray
 - [ ] Computer use controls

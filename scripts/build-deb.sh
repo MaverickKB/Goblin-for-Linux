@@ -6,5 +6,5 @@ cd "$(dirname "$0")/.."
 find Runtime -name __pycache__ -type d -prune -exec rm -rf {} +
 # Cargo can reuse an old frontend asset expansion after UI changes. Cleaning
 # this crate forces the embedded bundle to match src/.
-cargo clean -p goblin --manifest-path src-tauri/Cargo.toml
-npm run tauri build
+(cd src-tauri && cargo clean -p goblin)
+CARGO_INCREMENTAL=0 npm run tauri build

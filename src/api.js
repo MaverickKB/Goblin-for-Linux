@@ -75,7 +75,6 @@ export async function connect() {
   if (!tauri) {
     throw new Error('This page must run inside the Goblin app.');
   }
-  window.__goblinFrame = receive;
   let polling = true;
   const poll = async () => {
     while (polling) {

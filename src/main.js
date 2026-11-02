@@ -55,7 +55,7 @@ function updateCompanionCaption() {
   } else if (characterSignals.typing) {
     text = 'Listening';
   }
-  companionCaption.textContent = characterStage + ' / ' + text;
+  companionCaption.textContent = characterStage === 'failed' ? 'Static' : text;
 }
 
 function updateCharacter(partial) {
@@ -286,9 +286,6 @@ async function boot() {
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);
     const initial = await request('bootstrap');
-    modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
-    characterStage = 'called';
-    updateCompanionCaption();
     initCharacter(characterCanvas, { avatar: 'rookie' })
       .then(() => {
         characterStage = 'live';

@@ -11,7 +11,7 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
-use tauri::{Emitter, Manager, State};
+use tauri::{Manager, State};
 
 struct EngineState {
     stdin: Mutex<Option<ChildStdin>>,
@@ -121,7 +121,6 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
         .take()
         .ok_or_else(|| "The engine has no stdout".to_string())?;
 
-    let app_handle = app.clone();
     let frames = Arc::new(Mutex::new(VecDeque::new()));
     let reader_frames = Arc::clone(&frames);
     std::thread::spawn(move || {
@@ -139,7 +138,6 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
                 Err(_) => break,
             }
         }
-        let _ = app_handle.emit("engine-exit", "");
     });
 
     Ok(EngineState {
@@ -167,7 +165,6 @@ fn engine_poll(state: State<'_, EngineState>) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 fn engine_request(state: State<'_, EngineState>, frame: String) -> Result<(), String> {
-    eprintln!("ui request bytes={}", frame.len());
     let mut guard = state
         .stdin
         .lock()
@@ -187,34 +184,6 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            let resolver = app.asset_resolver();
-            match resolver.get("index.html".to_string()) {
-                Some(asset) => {
-                    let text = String::from_utf8_lossy(&asset.bytes);
-                    let main = resolver.get("main.js".to_string());
-                    let api = resolver.get("api.js".to_string());
-                    let main_text = main
-                        .as_ref()
-                        .map(|item| String::from_utf8_lossy(&item.bytes).to_string())
-                        .unwrap_or_default();
-                    let api_text = api
-                        .as_ref()
-                        .map(|item| String::from_utf8_lossy(&item.bytes).to_string())
-                        .unwrap_or_default();
-                    eprintln!(
-                        "ui asset index bytes={} boot_error={} companion={} character_js={} main_bytes={} main_probe={} main_loaded={} api_frame_error={}",
-                        asset.bytes.len(),
-                        text.contains("boot-error"),
-                        text.contains("companion"),
-                        resolver.get("character.js".to_string()).is_some(),
-                        main_text.len(),
-                        main_text.contains("ui-probe"),
-                        main_text.contains("Loaded "),
-                        api_text.contains("frame_error")
-                    );
-                }
-                None => eprintln!("ui asset index missing"),
-            }
             let handle = app.handle().clone();
             let state = spawn_engine(&handle).map_err(|message| {
                 Box::<dyn std::error::Error>::from(std::io::Error::new(
@@ -223,13 +192,6 @@ fn main() {
                 ))
             })?;
             app.manage(state);
-            let probe_handle = app.handle().clone();
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(800));
-                if let Err(error) = probe_handle.emit("ui-probe", "hello") {
-                    eprintln!("ui probe emit failed: {error}");
-                }
-            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url])
