@@ -278,6 +278,7 @@ async function boot() {
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);
     const initial = await request('bootstrap');
+    setStatus('Loaded ' + (initial ? Object.keys(initial).length : 'null'), 'busy');
     applySnapshot(initial);
     await chat.loadHistory();
   } catch (error) {
