@@ -57,7 +57,7 @@ npm run tauri dev
 
 ## Build notes
 
-Build the package with `bash scripts/build-deb.sh`. Cargo can reuse a stale frontend asset bundle in debug builds; when UI changes do not appear, run `cargo clean -p goblin --manifest-path src-tauri/Cargo.toml` before rebuilding. Release builds embed the current `src/` tree.
+Build the package with `bash scripts/build-deb.sh`. Cargo can reuse a stale frontend asset bundle after UI changes; the script clears the app crate first. For a quick release binary without a package, run `cargo clean -p goblin --manifest-path src-tauri/Cargo.toml` then `npm run tauri build -- --no-bundle`.
 
 ## License
 
