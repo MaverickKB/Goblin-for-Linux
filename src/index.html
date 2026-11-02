@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Goblin</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="rail">
+        <div class="brand">
+          <img src="assets/avatar.png" alt="" />
+          <div>
+            <strong>Goblin</strong>
+            <small id="profile-home">Linux</small>
+          </div>
+        </div>
+
+        <nav class="tabs">
+          <button class="tab active" data-tab="chat" type="button">Chat</button>
+          <button class="tab" data-tab="settings" type="button">Settings</button>
+        </nav>
+
+        <div class="autonomy-card">
+          <label class="switch">
+            <input id="autonomy-toggle" type="checkbox" />
+            <span class="track"></span>
+          </label>
+          <div>
+            <strong>Autonomy</strong>
+            <small id="autonomy-state">Off</small>
+          </div>
+        </div>
+
+        <div class="rail-foot">
+          <span class="dot" id="status-dot"></span>
+          <span id="status">Starting</span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1 id="header-title">Chat</h1>
+            <p id="header-sub">One continuing conversation</p>
+          </div>
+          <span class="chip" id="model-chip">No model</span>
+        </header>
+
+        <div id="banner" class="banner" hidden>
+          <span id="banner-text"></span>
+          <button id="banner-action" type="button">Open settings</button>
+        </div>
+
+        <section id="chat-view" class="view">
+          <div id="transcript" class="transcript">
+            <div class="empty" id="empty-state">
+              <img src="assets/avatar.png" alt="" />
+              <h2>Goblin is waking up</h2>
+              <p>Set a model in Settings, then say hello.</p>
+            </div>
+          </div>
+          <form id="composer" class="composer">
+            <textarea id="input" rows="1" placeholder="Message Goblin" autocomplete="off"></textarea>
+            <button id="send" type="submit">Send</button>
+          </form>
+        </section>
+
+        <section id="settings-view" class="view" hidden>
+          <form id="settings-form" class="settings">
+            <div class="section">
+              <h2>Personality</h2>
+              <label>Name
+                <input id="agent-name" type="text" />
+              </label>
+              <label>Instructions
+                <textarea id="user-instructions" rows="5"></textarea>
+              </label>
+            </div>
+
+            <div class="section">
+              <h2>Model</h2>
+              <label>Base URL
+                <input id="model-base-url" type="text" placeholder="http://127.0.0.1:8080/v1" />
+              </label>
+              <label>Model
+                <input id="model" type="text" placeholder="qwen3-32b" />
+              </label>
+              <label>Protocol
+                <select id="api-kind">
+                  <option value="chat_completions">Chat completions</option>
+                  <option value="responses">Responses</option>
+                  <option value="codex_responses">Codex responses</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="actions">
+              <button class="primary" type="submit">Save settings</button>
+              <span id="settings-status" class="muted"></span>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
