@@ -6,7 +6,7 @@ This port is in progress. The engine is vendored from Goblin for Mac 0.2.0. The 
 
 ## Architecture
 
-- `engine/` is the Goblin Python engine. It speaks NDJSON over stdin and stdout, one frame per line, exactly as it does on the Mac.
+- `Runtime/` is the Goblin Python engine. It speaks NDJSON over stdin and stdout, one frame per line, exactly as it does on the Mac.
 - `Resources/` holds the manuals, seed pack, and character art.
 - `src-tauri/` is the Tauri shell. It spawns the engine, owns the window, audio, notifications, and tray.
 - `src/` is the web UI.
@@ -27,7 +27,7 @@ Run the engine by hand:
 ```sh
 GOBLIN_KEYCHAIN_HELPER="$PWD/scripts/goblin-credentials" \
 GOBLIN_RESOURCES="$PWD/Resources" \
-python3 engine/goblin_bridge.py --home "$HOME/.local/share/goblin" --manifest product.json
+python3 Runtime/goblin_bridge.py --home "$HOME/.local/share/goblin" --manifest product.json
 ```
 
 Build the desktop app:
@@ -51,4 +51,4 @@ npm run tauri dev
 
 ## License
 
-Apache-2.0. See `LICENSE`, `engine/NOTICE`, and `engine/THIRD_PARTY_NOTICES`.
+Apache-2.0. See `LICENSE`, `Runtime/NOTICE`, and `Runtime/THIRD_PARTY_NOTICES`.
