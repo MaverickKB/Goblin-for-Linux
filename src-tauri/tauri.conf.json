@@ -13,7 +13,7 @@
         "title": "Goblin",
         "width": 898,
         "height": 674,
-        "resizable": false,
+        "resizable": true,
         "decorations": false,
         "transparent": true,
         "shadow": false
