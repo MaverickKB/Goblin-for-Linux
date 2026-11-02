@@ -8,6 +8,7 @@ import * as connections from './connections.js';
 import * as floor from './floor.js';
 import * as tools from './tools.js';
 import * as computer from './computer.js';
+import * as voice from './voice.js';
 import { initCharacter, setCharacterSignals } from './character.js';
 
 const app = document.getElementById('app');
@@ -301,6 +302,7 @@ async function boot() {
     floor.initFloor();
     tools.initTools();
     computer.initComputer();
+    voice.initVoice();
     wireAutonomy();
 
     settingsOpen.addEventListener('click', openSettings);
