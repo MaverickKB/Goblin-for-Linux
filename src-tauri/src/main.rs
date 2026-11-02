@@ -125,7 +125,10 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
         for line in reader.lines() {
             match line {
                 Ok(text) => {
-                    let _ = app_handle.emit("engine://frame", text);
+                    eprintln!("engine frame bytes={}", text.len());
+                    if let Err(error) = app_handle.emit("engine://frame", text) {
+                        eprintln!("engine emit failed: {error}");
+                    }
                 }
                 Err(_) => break,
             }
@@ -141,6 +144,7 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
 
 #[tauri::command]
 fn engine_request(state: State<'_, EngineState>, frame: String) -> Result<(), String> {
+    eprintln!("ui request bytes={}", frame.len());
     let mut guard = state
         .stdin
         .lock()
