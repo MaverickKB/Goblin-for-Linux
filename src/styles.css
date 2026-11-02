@@ -572,6 +572,52 @@ select {
   overflow-wrap: anywhere;
 }
 
+.tools-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.tool-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+.tool-row input {
+  margin-top: 3px;
+}
+
+.tool-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-copy strong {
+  display: block;
+  font-size: 13px;
+}
+
+.tool-copy small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.tool-rule {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 .section h2 {
   margin: 0;
   font-size: 15px;

@@ -6,6 +6,7 @@ import * as settings from './settings.js';
 import * as approvals from './approvals.js';
 import * as connections from './connections.js';
 import * as floor from './floor.js';
+import * as tools from './tools.js';
 import { initCharacter, setCharacterSignals } from './character.js';
 
 const statusDot = document.getElementById('status-dot');
@@ -117,6 +118,7 @@ function applySnapshot(next) {
   }
   approvals.sync(next.pending_approvals);
   floor.renderContinuity(next.memory);
+  tools.renderTools(next);
   updateCharacter({
     approval: (next.pending_approvals || []).length > 0,
     autonomy: Boolean(next.autonomy && next.autonomy.enabled),
@@ -285,6 +287,7 @@ async function boot() {
     });
     connections.initConnections();
     floor.initFloor();
+    tools.initTools();
     wireTabs();
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);
