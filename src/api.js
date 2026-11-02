@@ -43,6 +43,10 @@ function deliver(frame) {
 }
 
 function receive(payload) {
+  const marker = document.getElementById('status');
+  if (marker) {
+    marker.textContent = 'Frame';
+  }
   let frame;
   try {
     frame = typeof payload === 'string' ? JSON.parse(payload) : payload;
