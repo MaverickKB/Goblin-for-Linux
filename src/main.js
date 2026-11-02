@@ -7,6 +7,7 @@ import * as approvals from './approvals.js';
 import * as connections from './connections.js';
 import * as floor from './floor.js';
 import * as tools from './tools.js';
+import * as computer from './computer.js';
 import { initCharacter, setCharacterSignals } from './character.js';
 
 const statusDot = document.getElementById('status-dot');
@@ -288,6 +289,7 @@ async function boot() {
     connections.initConnections();
     floor.initFloor();
     tools.initTools();
+    computer.initComputer();
     wireTabs();
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);

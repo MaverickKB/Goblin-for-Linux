@@ -572,6 +572,31 @@ select {
   overflow-wrap: anywhere;
 }
 
+.computer-output {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.computer-image {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.computer-json {
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .tools-list {
   display: flex;
   flex-direction: column;
