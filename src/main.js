@@ -38,6 +38,8 @@ let characterSignals = {
   completed: false,
 };
 
+let characterStage = 'starting';
+
 function updateCompanionCaption() {
   let text = 'Idle';
   if (characterSignals.error) {
@@ -53,7 +55,7 @@ function updateCompanionCaption() {
   } else if (characterSignals.typing) {
     text = 'Listening';
   }
-  companionCaption.textContent = text;
+  companionCaption.textContent = characterStage + ' / ' + text;
 }
 
 function updateCharacter(partial) {
@@ -287,10 +289,12 @@ async function boot() {
     modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
     initCharacter(characterCanvas, { avatar: 'rookie' })
       .then(() => {
-        companionCaption.textContent = 'Live';
-        chat.appendNote('Character ready.');
+        characterStage = 'live';
+        updateCompanionCaption();
       })
       .catch((error) => {
+        characterStage = 'failed';
+        updateCompanionCaption();
         chat.appendNote('Character: ' + error.message);
         showStaticCharacter();
       });
