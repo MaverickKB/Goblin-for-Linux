@@ -14,10 +14,10 @@ This port is in progress. The engine is vendored from Goblin for Mac 0.2.0. The 
 
 ## Install
 
-Download `Goblin_0.1.1_amd64.deb` from Releases and install it:
+Download `Goblin_0.1.2_amd64.deb` from Releases and install it:
 
 ```sh
-sudo apt install ./Goblin_0.1.1_amd64.deb
+sudo apt install ./Goblin_0.1.2_amd64.deb
 ```
 
 Run Goblin from the applications menu or with `goblin`. On first run, open Settings, set a model base URL and model, or sign in with xAI or OpenAI under Connections. Credentials live in the desktop keyring. Profile data lives in `~/.local/share/goblin`.
@@ -25,9 +25,9 @@ Run Goblin from the applications menu or with `goblin`. On first run, open Setti
 ## Known limitations in 0.1.0
 
 - Voice is not ported yet.
-- No tray icon yet.
+- The tray icon builds, but no tray host exists on the headless test box.
 - The Debian package is the only published format; AppImage is not built.
-- The character uses Canvas 2D; the Mac mesh deformation and face shader are pending.
+- The character uses the Mac rig mesh deformation on Canvas 2D. The Metal face shader is approximated by eyelids.
 - Live xAI device sign-in needs a desktop keyring and is not exercised in CI.
 
 ## Development

@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.2
+
+Parity pass on the remaining surfaces.
+
+### Changed
+
+- The character now deforms with the Mac rig mesh: head, arms, jaw, chest, and body weights drive a 12 by 24 triangle grid on Canvas 2D. WebGL hangs in the target WebKit build, so the mesh is rendered with clipped 2D triangles.
+- Computer use has controls, not only inspection: click the screenshot to click that point, type text, press key combos, focus a window, and scroll. Each input tool goes through the engine approval path.
+- The approval card lives above chat and settings, so it stays visible while configuring.
+- Tray icon with Show Goblin and Quit.
+- AppImage is built from the same AppDir and runs on the bundled CPython.
+
+### Added
+
+- Voice session path: engine lease, websocket with the issued subprotocol, session update, microphone PCM16 frames, playback, and engine event forwarding. It requires an xAI sign-in and a microphone; the headless build host can only verify the sign-in gate.
+
 ## 0.1.1
 
 The window now matches the Mac companion.
