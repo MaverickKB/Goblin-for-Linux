@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
+use tauri::menu::{Menu, MenuItem};
+use tauri::tray::TrayIconBuilder;
 use tauri::{LogicalPosition, LogicalSize, Manager, State};
 
 struct EngineState {
@@ -228,6 +230,34 @@ fn main() {
                 ))
             })?;
             app.manage(state);
+            if let Some(icon) = app.default_window_icon() {
+                let show = MenuItem::with_id(app, "show", "Show Goblin", true, None::<&str>);
+                let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>);
+                match (show, quit) {
+                    (Ok(show), Ok(quit)) => {
+                        if let Ok(menu) = Menu::with_items(app, &[&show, &quit]) {
+                            let tray = TrayIconBuilder::new()
+                                .icon(icon.clone())
+                                .menu(&menu)
+                                .on_menu_event(|app, event| match event.id.as_ref() {
+                                    "show" => {
+                                        if let Some(window) = app.get_webview_window("main") {
+                                            let _ = window.show();
+                                            let _ = window.set_focus();
+                                        }
+                                    }
+                                    "quit" => app.exit(0),
+                                    _ => {}
+                                })
+                                .build(app);
+                            if let Err(error) = tray {
+                                eprintln!("tray unavailable: {error}");
+                            }
+                        }
+                    }
+                    _ => eprintln!("tray menu could not be created"),
+                }
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url, notify, set_window_mode])

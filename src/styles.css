@@ -77,10 +77,6 @@ svg {
   display: block;
 }
 
-body[data-renderer="canvas"] #character {
-  outline: 3px solid #ff0000;
-}
-
 .speech {
   position: absolute;
   left: 10px;
@@ -649,6 +645,44 @@ body[data-renderer="canvas"] #character {
   color: var(--muted);
   font: 11px/1.4 "SF Mono", "DejaVu Sans Mono", monospace;
   white-space: pre-wrap;
+}
+
+.computer-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.computer-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.control-row {
+  display: flex;
+  gap: 6px;
+}
+
+.control-row input,
+.control-row select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: 12px;
+}
+
+.control-row button {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card-solid);
+  font-size: 11px;
 }
 
 .tools-list {

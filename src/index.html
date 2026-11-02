@@ -45,19 +45,19 @@
 
         <div class="divider"></div>
 
+        <div class="approval" id="approval" hidden>
+          <div class="approval-copy">
+            <strong id="approval-title">Goblin wants to use a tool</strong>
+            <pre id="approval-detail"></pre>
+          </div>
+          <div class="approval-actions">
+            <button id="approval-allow" class="primary" type="button">Allow</button>
+            <button id="approval-deny" type="button">Deny</button>
+          </div>
+        </div>
+
         <section class="chat-view" id="chat-view">
           <div class="transcript" id="transcript"></div>
-
-          <div class="approval" id="approval" hidden>
-            <div class="approval-copy">
-              <strong id="approval-title">Goblin wants to use a tool</strong>
-              <pre id="approval-detail"></pre>
-            </div>
-            <div class="approval-actions">
-              <button id="approval-allow" class="primary" type="button">Allow</button>
-              <button id="approval-deny" type="button">Deny</button>
-            </div>
-          </div>
 
           <form class="composer" id="composer">
             <div id="attachments" class="attachments" hidden></div>
@@ -136,13 +136,39 @@
 
             <div class="section">
               <h3>Computer</h3>
-              <p class="muted">Inspect the desktop Goblin can see. Input tools still ask for approval.</p>
+              <p class="muted">Click the screenshot to click that point. Input tools ask for approval.</p>
               <div class="inline-actions">
                 <button id="computer-shot" class="primary" type="button">Take screenshot</button>
                 <button id="computer-windows" type="button">List windows</button>
                 <span id="computer-status" class="muted"></span>
               </div>
               <div id="computer-output" class="computer-output"></div>
+              <div class="computer-controls">
+                <label>Type text
+                  <span class="control-row">
+                    <input id="computer-text" type="text" placeholder="Text to type" />
+                    <button id="computer-type" type="button">Type</button>
+                  </span>
+                </label>
+                <label>Key combo
+                  <span class="control-row">
+                    <input id="computer-key" type="text" placeholder="ctrl+l" />
+                    <button id="computer-key-run" type="button">Press</button>
+                  </span>
+                </label>
+                <label>Focus window
+                  <span class="control-row">
+                    <select id="computer-window"></select>
+                    <button id="computer-focus" type="button">Focus</button>
+                  </span>
+                </label>
+                <label>Scroll
+                  <span class="control-row">
+                    <input id="computer-dy" type="number" value="-3" />
+                    <button id="computer-scroll" type="button">Scroll</button>
+                  </span>
+                </label>
+              </div>
             </div>
 
             <div class="section">
