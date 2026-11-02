@@ -1,6 +1,6 @@
 // Window wiring: boot the engine, route frames, switch views.
 
-import { connect, listenTo, onEvent, request } from './api.js';
+import { connect, listenTo, notify, onEvent, request } from './api.js';
 import * as chat from './chat.js';
 import * as settings from './settings.js';
 import * as approvals from './approvals.js';
@@ -138,6 +138,9 @@ function handleFrame(frame) {
     if (frame.data.kind === 'agent') {
       chat.clearStream();
       updateCharacter({ speaking: false, thinking: false, working: false, speechLevel: 0, completed: true });
+      if (!document.hasFocus() && frame.data.text) {
+        notify('Goblin replied', String(frame.data.text).slice(0, 140));
+      }
       clearTimeout(completionTimer);
       completionTimer = setTimeout(() => updateCharacter({ completed: false }), 1400);
     } else if (frame.data.kind === 'thought') {
@@ -157,6 +160,7 @@ function handleFrame(frame) {
   if (frame.event === 'approval') {
     approvals.show(frame.data);
     updateCharacter({ approval: true });
+    notify('Goblin needs approval', (frame.data && frame.data.name) || 'A tool is waiting');
     return;
   }
   if (frame.event === 'snapshot') {

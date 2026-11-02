@@ -36,6 +36,17 @@ export function listenTo(event, handler) {
   return tauri.event.listen(event, handler);
 }
 
+export async function notify(title, body) {
+  if (!tauri) {
+    return;
+  }
+  try {
+    await tauri.core.invoke('notify', { title, body });
+  } catch (error) {
+    // Notifications are best effort; a missing desktop bus is not fatal.
+  }
+}
+
 function deliver(frame) {
   for (const handler of handlers) {
     handler(frame);

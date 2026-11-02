@@ -79,6 +79,17 @@ fn engine_python(root: &std::path::Path) -> String {
 }
 
 #[tauri::command]
+fn notify(title: String, body: String) -> Result<(), String> {
+    Command::new("notify-send")
+        .arg("--app-name=Goblin")
+        .arg(title)
+        .arg(body)
+        .spawn()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn open_url(url: String) -> Result<(), String> {
     if !url.starts_with("https://") {
         return Err("Only https links can be opened".to_string());
@@ -198,7 +209,7 @@ fn main() {
             app.manage(state);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url])
+        .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url, notify])
         .build(tauri::generate_context!())
         .expect("Goblin could not build its window")
         .run(|app_handle, event| {
