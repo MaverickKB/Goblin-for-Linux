@@ -160,6 +160,20 @@ fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            let resolver = app.asset_resolver();
+            match resolver.get("index.html".to_string()) {
+                Some(asset) => {
+                    let text = String::from_utf8_lossy(&asset.bytes);
+                    eprintln!(
+                        "ui asset index bytes={} boot_error={} companion={} character_js={}",
+                        asset.bytes.len(),
+                        text.contains("boot-error"),
+                        text.contains("companion"),
+                        resolver.get("character.js".to_string()).is_some()
+                    );
+                }
+                None => eprintln!("ui asset index missing"),
+            }
             let handle = app.handle().clone();
             let state = spawn_engine(&handle).map_err(|message| {
                 Box::<dyn std::error::Error>::from(std::io::Error::new(
