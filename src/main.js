@@ -249,7 +249,9 @@ function wireAutonomy() {
 
 async function boot() {
   try {
+    setStatus('Connecting', 'busy');
     await connect();
+    setStatus('Loading', 'busy');
     onEvent(handleFrame);
     await listenTo('tauri://drag-drop', (event) => {
       const paths = (event.payload && event.payload.paths) || [];
