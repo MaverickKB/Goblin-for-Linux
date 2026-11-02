@@ -1,7 +1,7 @@
 {
   "name": "Goblin",
   "vendor": "MaverickKB",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "app_id": "com.maverickkb.goblin",
   "minimum_os": "Ubuntu 24.04",
   "python_version": "3.12",
