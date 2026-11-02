@@ -4,6 +4,7 @@ import { connect, listenTo, onEvent, request } from './api.js';
 import * as chat from './chat.js';
 import * as settings from './settings.js';
 import * as approvals from './approvals.js';
+import * as connections from './connections.js';
 
 const statusDot = document.getElementById('status-dot');
 const statusText = document.getElementById('status');
@@ -186,6 +187,7 @@ async function boot() {
         chat.appendNote('Settings saved.');
       },
     });
+    connections.initConnections();
     wireTabs();
     wireAutonomy();
     bannerAction.addEventListener('click', openSettings);

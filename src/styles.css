@@ -510,6 +510,68 @@ select {
   border-color: #5a4628;
 }
 
+.accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel-2);
+}
+
+.account-copy {
+  min-width: 0;
+}
+
+.account-copy strong {
+  display: block;
+}
+
+.account-copy small {
+  color: var(--muted);
+}
+
+.account-actions {
+  display: flex;
+  align-items: center;
+}
+
+.account-actions button,
+.device-code button {
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.account-actions button.primary {
+  border: 0;
+  background: var(--amber);
+  color: #1b1408;
+}
+
+.device-code {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.device-code code {
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #0d0b08;
+  letter-spacing: 1px;
+}
+
 .actions {
   grid-column: 1 / -1;
   display: flex;

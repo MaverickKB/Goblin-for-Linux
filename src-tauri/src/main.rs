@@ -72,6 +72,18 @@ fn engine_python() -> String {
     std::env::var("GOBLIN_PYTHON").unwrap_or_else(|_| "python3".to_string())
 }
 
+#[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    if !url.starts_with("https://") {
+        return Err("Only https links can be opened".to_string());
+    }
+    Command::new("xdg-open")
+        .arg(&url)
+        .spawn()
+        .map_err(|error| error.to_string())?;
+    Ok(())
+}
+
 fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
     let root = engine_root(app);
     let home = data_home();
@@ -158,7 +170,7 @@ fn main() {
             app.manage(state);
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![engine_request])
+        .invoke_handler(tauri::generate_handler![engine_request, open_url])
         .build(tauri::generate_context!())
         .expect("Goblin could not build its window")
         .run(|app_handle, event| {
