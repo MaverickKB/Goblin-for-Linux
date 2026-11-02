@@ -70,7 +70,11 @@ fn engine_root(app: &tauri::AppHandle) -> PathBuf {
     resources
 }
 
-fn engine_python() -> String {
+fn engine_python(root: &std::path::Path) -> String {
+    let bundled = root.join("vendor").join("python").join("bin").join("python3");
+    if bundled.is_file() {
+        return bundled.to_string_lossy().to_string();
+    }
     std::env::var("GOBLIN_PYTHON").unwrap_or_else(|_| "python3".to_string())
 }
 
@@ -93,7 +97,7 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
     let log_path = home.join("engine.log");
     let log = File::create(&log_path).map_err(|error| error.to_string())?;
 
-    let mut command = Command::new(engine_python());
+    let mut command = Command::new(engine_python(&root));
     command
         .arg(root.join("Runtime").join("goblin_bridge.py"))
         .arg("--home")

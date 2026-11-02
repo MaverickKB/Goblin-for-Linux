@@ -9,3 +9,4 @@ build/
 *.AppImage
 *.deb
 .DS_Store
+vendor/python/

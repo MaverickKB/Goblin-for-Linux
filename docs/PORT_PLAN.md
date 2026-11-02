@@ -37,7 +37,7 @@ Linux changes in the engine so far:
 7. Accounts: device sign-in, model catalog, credential use. Panel and flow built; live provider sign-in not yet exercised.
 8. Notifications, tray, close-to-tray. Not started.
 9. Computer use: window list, screenshots, input, approvals. Engine tools exist; dedicated controls remain.
-10. Packaging, bundled runtime, desktop entry, release checks. Debian package installed and chatted; AppImage and bundled Python remain.
+10. Packaging, bundled runtime, desktop entry, release checks. Debian package installed and chatted; bundled CPython 3.12.16 included; AppImage remains.
 
 Each phase is done only when it runs on the target and has a direct probe.
 

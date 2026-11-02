@@ -14,7 +14,7 @@ This port is in progress. The engine is vendored from Goblin for Mac 0.2.0. The 
 
 ## Development
 
-Requirements: Ubuntu 24.04 or later, Rust 1.77 or later, Node 20 or later, Python 3.11 or later, and the Tauri Linux dependencies (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, `libayatana-appindicator3-dev`, `libasound2-dev`, `libsecret-1-dev`, `libsecret-tools`).
+Requirements: Ubuntu 24.04 or later, Rust 1.77 or later, Node 20 or later, and the Tauri Linux dependencies (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, `libayatana-appindicator3-dev`, `libasound2-dev`, `libsecret-1-dev`, `libsecret-tools`). Python 3.11 or later is needed for the test suite and build scripts; packaged builds bundle CPython 3.12.16.
 
 Run the engine tests:
 
@@ -49,18 +49,20 @@ npm run tauri dev
 - [x] Attachments: picker, drag and drop, transcript chips
 - [x] Connections panel and device sign-in flow
 - [x] Debian package
+- [x] Bundled CPython runtime (3.12.16)
 - [x] Character: standing art with breathing, sway, glances, and blinks (Canvas 2D)
 - [ ] Character mesh deformation and face shader (WebGL)
 - [ ] Voice
 - [ ] Notifications and tray
 - [ ] Computer use controls
-- [ ] Settings parity: autonomy floor, continuity, tools
 - [ ] AppImage
-- [ ] Bundled Python runtime
+- [x] Bundled Python runtime
 
 ## Build notes
 
-Build the package with `bash scripts/build-deb.sh`. Cargo can reuse a stale frontend asset bundle after UI changes; the script clears the app crate first. For a quick release binary without a package, run `cargo clean -p goblin --manifest-path src-tauri/Cargo.toml` then `npm run tauri build -- --no-bundle`.
+Build the package with `bash scripts/build-deb.sh`. It fetches the pinned CPython 3.12.16 runtime with a checksum (`scripts/fetch-python.sh`), clears the app crate, and builds with `CARGO_INCREMENTAL=0`. Cargo can reuse a stale frontend asset bundle after UI changes; the script clears the crate first. For a quick release binary without a package, run `bash scripts/fetch-python.sh`, then `cargo clean -p goblin` inside `src-tauri`, then `npm run tauri build -- --no-bundle`.
+
+The packaged app runs its engine and credential helper with the bundled interpreter at `<resources>/_up_/vendor/python/bin/python3`. CPython is distributed under the PSF License; the runtime is fetched at build time and is not committed.
 
 ## License
 

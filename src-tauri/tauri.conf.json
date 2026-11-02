@@ -27,14 +27,16 @@
     "icon": ["icons/icon.png"],
     "linux": {
       "deb": {
-        "depends": ["python3 (>= 3.11)"]
+        "depends": []
       }
     },
     "resources": [
       "../Runtime",
       "../Resources",
       "../product.json",
-      "../scripts/goblin-credentials"
+      "../scripts/goblin-credentials",
+      "../scripts/goblin-credentials.py",
+      "../vendor/python"
     ],
     "shortDescription": "A native Linux agent companion",
     "longDescription": "Goblin is a desktop agent companion with local tools, persistent history, embedded AetherMind continuity, and an autonomy floor whose on switch belongs to the operator."

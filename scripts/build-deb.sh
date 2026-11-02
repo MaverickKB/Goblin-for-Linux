@@ -3,6 +3,7 @@
 set -e
 cd "$(dirname "$0")/.."
 . "$HOME/.cargo/env"
+bash scripts/fetch-python.sh
 find Runtime -name __pycache__ -type d -prune -exec rm -rf {} +
 # Cargo can reuse an old frontend asset expansion after UI changes. Cleaning
 # this crate forces the embedded bundle to match src/.
