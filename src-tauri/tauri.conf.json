@@ -4,7 +4,6 @@
   "version": "0.1.0",
   "identifier": "com.maverickkb.goblin",
   "build": {
-    "devUrl": "http://127.0.0.1:8099",
     "frontendDist": "../src"
   },
   "app": {
