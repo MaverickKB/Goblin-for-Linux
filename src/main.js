@@ -18,6 +18,16 @@ const chatView = document.getElementById('chat-view');
 const settingsView = document.getElementById('settings-view');
 
 let snapshot = null;
+let activeTab = 'chat';
+
+function updateBanner() {
+  if (snapshot && snapshot.setup_issue && activeTab === 'chat') {
+    bannerText.textContent = snapshot.setup_issue;
+    banner.hidden = false;
+    return;
+  }
+  banner.hidden = true;
+}
 
 function setStatus(text, tone) {
   statusText.textContent = text;
@@ -46,10 +56,8 @@ function applySnapshot(next) {
   }
   if (next.setup_issue) {
     bannerText.textContent = next.setup_issue;
-    banner.hidden = false;
-  } else {
-    banner.hidden = true;
   }
+  updateBanner();
 }
 
 function handleFrame(frame) {
@@ -104,6 +112,7 @@ function applyActivity(data) {
 }
 
 function openSettings() {
+  activeTab = 'settings';
   for (const tab of document.querySelectorAll('.tab')) {
     tab.classList.toggle('active', tab.dataset.tab === 'settings');
   }
@@ -111,12 +120,14 @@ function openSettings() {
   settingsView.hidden = false;
   headerTitle.textContent = 'Settings';
   headerSub.textContent = 'Personality and model connection';
+  updateBanner();
 }
 
 function wireTabs() {
   for (const tab of document.querySelectorAll('.tab')) {
     tab.addEventListener('click', () => {
       const name = tab.dataset.tab;
+      activeTab = name;
       for (const other of document.querySelectorAll('.tab')) {
         other.classList.toggle('active', other === tab);
       }
@@ -125,6 +136,7 @@ function wireTabs() {
       headerTitle.textContent = name === 'chat' ? 'Chat' : 'Settings';
       headerSub.textContent =
         name === 'chat' ? 'One continuing conversation' : 'Personality and model connection';
+      updateBanner();
     });
   }
 }
