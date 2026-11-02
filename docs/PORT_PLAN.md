@@ -31,7 +31,7 @@ Linux changes in the engine so far:
 1. Engine on Linux, tests green. **Done.**
 2. Window, chat, history, composer, model settings, autonomy switch. **Done.**
 3. Attachments: file picker, drag and drop, transcript chips. **Done.**
-4. Settings parity: connections panel done; autonomy floor, continuity, and tools remain.
+4. Settings parity: connections panel, autonomy floor editor, and continuity summary done; tool toggles and other advanced sections remain.
 5. Character: standing art with breathing, sway, glances, and blinks done in Canvas 2D. Mesh deformation and the face shader remain, blocked on WebGL initialization in the headless WebKit target.
 6. Voice: capture, playback, websocket, transcripts, tool calls. Not started.
 7. Accounts: device sign-in, model catalog, credential use. Panel and flow built; live provider sign-in not yet exercised.

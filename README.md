@@ -43,6 +43,7 @@ npm run tauri dev
 - [x] Linux credential helper
 - [x] Tauri shell, chat, history, composer
 - [x] Settings: personality, model connection, autonomy switch
+- [x] Autonomy floor editor and continuity summary
 - [x] Tool approvals
 - [x] Attachments: picker, drag and drop, transcript chips
 - [x] Connections panel and device sign-in flow
