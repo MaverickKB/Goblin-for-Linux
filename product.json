@@ -1,0 +1,61 @@
+{
+  "name": "Goblin",
+  "vendor": "MaverickKB",
+  "version": "0.1.0",
+  "app_id": "com.maverickkb.goblin",
+  "minimum_os": "Ubuntu 24.04",
+  "python_version": "3.12",
+  "platform": "linux",
+  "session_slug": "goblin",
+  "default_avatar": "rookie",
+  "default_model": {
+    "base_url": "",
+    "model": "",
+    "api_kind": "chat_completions"
+  },
+  "voice": {
+    "websocket_url": "wss://api.x.ai/v1/realtime",
+    "api_base_url": "https://api.x.ai/v1",
+    "client_secret_path": "/realtime/client_secrets",
+    "client_protocol_prefix": "xai-client-secret.",
+    "model": "grok-voice-latest",
+    "voice": "rex",
+    "sample_rate": 24000
+  },
+  "oauth": {
+    "xai": {
+      "name": "xAI",
+      "protocol": "rfc_device_code",
+      "client_id": "b1a00492-073a-47ea-816f-4c329264a828",
+      "scope": "openid profile email offline_access grok-cli:access api:access",
+      "device_url": "https://auth.x.ai/oauth2/device/code",
+      "discovery_url": "https://auth.x.ai/.well-known/openid-configuration",
+      "token_url_prefix": "https://auth.x.ai/",
+      "model_base_url": "https://api.x.ai/v1",
+      "api_kind": "responses",
+      "models_path": "/models",
+      "keychain_service": "oauth_xai"
+    },
+    "openai-codex": {
+      "name": "OpenAI",
+      "protocol": "codex_device_code",
+      "client_id": "app_EMoamEEZ73f0CkXaXp7hrann",
+      "issuer": "https://auth.openai.com",
+      "device_code_path": "/api/accounts/deviceauth/usercode",
+      "device_token_path": "/api/accounts/deviceauth/token",
+      "verification_path": "/codex/device",
+      "token_path": "/oauth/token",
+      "redirect_path": "/deviceauth/callback",
+      "model_base_url": "https://chatgpt.com/backend-api/codex",
+      "api_kind": "codex_responses",
+      "models_path": "/models?client_version=0.166.0",
+      "keychain_service": "oauth_openai_codex"
+    }
+  },
+  "keychain_services": {
+    "model": "com.maverickkb.goblin.model",
+    "voice": "com.maverickkb.goblin.voice",
+    "oauth_xai": "com.maverickkb.goblin.oauth.xai",
+    "oauth_openai_codex": "com.maverickkb.goblin.oauth.openai-codex"
+  }
+}

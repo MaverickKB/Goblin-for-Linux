@@ -1,0 +1,13 @@
+Copyright 2026 MaverickKB
+
+Goblin application source is licensed under the Apache License, Version 2.0.
+See LICENSE in this directory.
+
+The embedded AetherMind component retains its AetherMind Noncommercial Public
+License in AETHERMIND_LICENSE. That license permits non-commercial use, copying,
+modification and sharing with its notice intact. Commercial use of that
+component is not granted.
+
+The Goblin foundational seed pack and the four accompanying generic procedures
+ship as Goblin product content. Their content decisions, including omitted
+entries, are recorded in Resources/Seeds/SOURCE.json.

@@ -1,0 +1,379 @@
+{
+  "pack": "goblin-foundations",
+  "version": 1,
+  "license": "Apache-2.0",
+  "license_file": "Runtime/LICENSE",
+  "adaptation_inventory": [
+    {
+      "kind": "layer",
+      "source_ctx": "seed/safety/hosting-actions",
+      "action": "omitted-pending-approval",
+      "reason": "Security-related candidate guidance is separated for operator review and excluded from the installed foundation pack.",
+      "quality_or_ux_benefit": "Preserve active work and make authorized runtime maintenance recoverable.",
+      "proposal": "docs/proposals/seed-security.md"
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/safety/operator-stops-are-real",
+      "action": "omitted-pending-approval",
+      "reason": "Security-related candidate guidance is separated for operator review and excluded from the installed foundation pack.",
+      "quality_or_ux_benefit": "Honor a user Stop consistently across wakes and restarts.",
+      "proposal": "docs/proposals/seed-security.md"
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/safety/approval-gates",
+      "action": "omitted-pending-approval",
+      "reason": "Security-related candidate guidance is separated for operator review and excluded from the installed foundation pack.",
+      "quality_or_ux_benefit": "Respect actual authorization while keeping authorized dependency repair possible.",
+      "proposal": "docs/proposals/seed-security.md"
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/safety/no-destructive-actions",
+      "action": "omitted-pending-approval",
+      "reason": "Security-related candidate guidance is separated for operator review and excluded from the installed foundation pack.",
+      "quality_or_ux_benefit": "Reduce accidental data loss within the actual authorized task.",
+      "proposal": "docs/proposals/seed-security.md"
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/safety/credentials-stay-server-side",
+      "action": "omitted-pending-approval",
+      "reason": "Security-related candidate guidance is separated for operator review and excluded from the installed foundation pack.",
+      "quality_or_ux_benefit": "Keep user secrets out of conversation and durable memory.",
+      "proposal": "docs/proposals/seed-security.md"
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/feature-scope",
+      "target_ctx": "seed/operating/feature-scope",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Use observed installed capabilities and distinguish configuration from defects."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/identity-is-yours-to-inhabit",
+      "target_ctx": "seed/operating/identity-is-yours-to-inhabit",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Let the user own personality and distinguish generic foundations from personal history."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/sessions-are-subminds",
+      "target_ctx": "seed/operating/sessions-are-subminds",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Coordinate scoped helper work without losing parent responsibility."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/claim-before-acting",
+      "action": "omitted",
+      "reason": "Helper ownership is covered by sessions-are-subminds."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/cost-lanes",
+      "target_ctx": "seed/operating/cost-lanes",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Respect the user’s actual provider and resource tradeoffs instead of imposing one."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/operator-decisions-are-theirs",
+      "target_ctx": "seed/operating/operator-decisions-are-theirs",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Proceed within authorization and ask only for genuine missing user choices."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/wakes-are-opt-in",
+      "target_ctx": "seed/operating/wakes-are-opt-in",
+      "action": "adapted",
+      "reason": "Retain generic quality or product knowledge while removing personal coding preferences, automatic spending assumptions, learned-text authority, or forced reply verbosity.",
+      "quality_or_ux_benefit": "Keep proactive work consistent with configured autonomy and user Stop."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/skills-before-housework",
+      "target_ctx": "seed/operating/skills-before-housework",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Use automatic governing guidance and applicable existing procedures without user reminders."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/delegate-then-verify",
+      "target_ctx": "seed/operating/delegate-then-verify",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Use authorized helpers effectively and verify their claims."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/operating/identity-and-ownership",
+      "action": "omitted",
+      "reason": "The source identity and revision behavior does not apply to a single-conversation app."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/verify-before-done",
+      "target_ctx": "seed/delivery/verify-before-done",
+      "action": "retained",
+      "reason": "Generic operating or delivery intent applies unchanged.",
+      "quality_or_ux_benefit": "Connect a completion claim to the requested real outcome."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/reproduce-before-fixing",
+      "target_ctx": "seed/delivery/reproduce-before-fixing",
+      "action": "retained",
+      "reason": "Generic operating or delivery intent applies unchanged.",
+      "quality_or_ux_benefit": "Correct the observed root cause rather than conceal a symptom."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/before-after-probes",
+      "target_ctx": "seed/delivery/before-after-probes",
+      "action": "adapted",
+      "reason": "Retain generic quality or product knowledge while removing personal coding preferences, automatic spending assumptions, learned-text authority, or forced reply verbosity.",
+      "quality_or_ux_benefit": "Make a live repair reviewable through comparable evidence."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/verify-child-reports",
+      "target_ctx": "seed/delivery/verify-child-reports",
+      "action": "retained",
+      "reason": "Generic operating or delivery intent applies unchanged.",
+      "quality_or_ux_benefit": "Keep delegated claims accountable to actual artifacts."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/write-lessons-as-rules",
+      "target_ctx": "seed/delivery/write-lessons-as-rules",
+      "action": "adapted",
+      "reason": "Retain generic quality or product knowledge while removing personal coding preferences, automatic spending assumptions, learned-text authority, or forced reply verbosity.",
+      "quality_or_ux_benefit": "Preserve reusable corrections with the reason and intended behavior."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/junior-readable-code",
+      "target_ctx": "seed/delivery/junior-readable-code",
+      "action": "adapted",
+      "reason": "Retain generic quality or product knowledge while removing personal coding preferences, automatic spending assumptions, learned-text authority, or forced reply verbosity.",
+      "quality_or_ux_benefit": "Keep code understandable and maintainable."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/build-the-general-machine",
+      "target_ctx": "seed/delivery/build-the-general-machine",
+      "action": "retained",
+      "reason": "Generic operating or delivery intent applies unchanged.",
+      "quality_or_ux_benefit": "Deliver the general requested capability rather than a test-specific shortcut."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/evidence-based-budgets",
+      "target_ctx": "seed/delivery/evidence-based-budgets",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Keep estimates evidence-based and replace unproductive approaches."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/small-model-rhythm",
+      "target_ctx": "seed/delivery/small-model-rhythm",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Make evidence-based next decisions without imposing a reply style or arbitrary quota."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/delivery/honest-uncertainty",
+      "target_ctx": "seed/delivery/honest-uncertainty",
+      "action": "retained",
+      "reason": "Generic operating or delivery intent applies unchanged.",
+      "quality_or_ux_benefit": "Distinguish observation, inference, and verification gaps."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/board/close-on-live-evidence",
+      "action": "omitted",
+      "reason": "Generic delivery proof is retained."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/continuity/one-store",
+      "target_ctx": "seed/continuity/one-store",
+      "action": "adapted",
+      "reason": "Retain generic quality or product knowledge while removing personal coding preferences, automatic spending assumptions, learned-text authority, or forced reply verbosity.",
+      "quality_or_ux_benefit": "Preserve memory provenance and respect selected core ownership."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/first-run/no-history-yet",
+      "target_ctx": "seed/first-run/no-history-yet",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Provide a useful beginning without inventing a relationship or private facts."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/first-run/where-to-look",
+      "target_ctx": "seed/first-run/where-to-look",
+      "action": "adapted",
+      "reason": "Align product facts and ownership with native Goblin.",
+      "quality_or_ux_benefit": "Find the installed manuals, registry, and Settings instead of guessing."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/ios/developer-mode-setup",
+      "action": "omitted",
+      "reason": "Goblin is a native macOS application with no shipped phone application."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": "seed/ios/fresh-install-config",
+      "action": "omitted",
+      "reason": "Goblin has no shipped phone endpoint/session setup."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/harness/posture",
+      "target_ctx": "seed/harness/posture",
+      "action": "adapted",
+      "reason": "Replace unavailable scan references with native verified-delivery intent.",
+      "quality_or_ux_benefit": "Keep native conversation ownership, user Stop, and real delivery clear."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/harness/delivery-checklist",
+      "target_ctx": "seed/harness/delivery-checklist",
+      "action": "adapted",
+      "reason": "Replace unavailable scan references with native verified-delivery intent.",
+      "quality_or_ux_benefit": "Support a reviewable completion with missing evidence explicit."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/harness/delivery-discipline",
+      "action": "omitted",
+      "reason": "The source behavior does not apply to Goblin."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/harness/uncertainty",
+      "target_ctx": "seed/harness/uncertainty",
+      "action": "retained",
+      "reason": "Generic uncertainty and evidence posture applies unchanged.",
+      "quality_or_ux_benefit": "Make uncertainty useful to the next decision."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/harness/small-model",
+      "target_ctx": "seed/harness/small-model",
+      "action": "adapted",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Use evidence and user-requested depth rather than rigid model-size style assumptions."
+    },
+    {
+      "kind": "texture",
+      "source_ctx": "seed/ios/support-hints",
+      "action": "omitted",
+      "reason": "Goblin has no shipped phone application."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/foundation",
+      "action": "added",
+      "reason": "Preserve useful generic intent while removing fixed personality, rigid style or cost preferences, and unsupported authority assumptions.",
+      "quality_or_ux_benefit": "Supply native architecture knowledge while leaving user preferences and personality open."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/history",
+      "action": "added",
+      "reason": "Verified native capability or generic foundational experience explicitly requested by the operator.",
+      "quality_or_ux_benefit": "Preserve uninterrupted active work and recover exact historical evidence."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/settings",
+      "action": "added",
+      "reason": "Verified native capability or generic foundational experience explicitly requested by the operator.",
+      "quality_or_ux_benefit": "Help the user find the actual native controls without sending or changing work unexpectedly."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/world-and-floor",
+      "action": "added",
+      "reason": "Verified native capability or generic foundational experience explicitly requested by the operator.",
+      "quality_or_ux_benefit": "Explain priorities, floor definitions, and generated runtime state accurately."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/model-roles",
+      "action": "added",
+      "reason": "Verified native capability or generic foundational experience explicitly requested by the operator.",
+      "quality_or_ux_benefit": "Explain independent role selections, reusable model presets, and endpoint-scoped credentials."
+    },
+    {
+      "kind": "layer",
+      "source_ctx": null,
+      "target_ctx": "seed/goblin/learning-and-repair",
+      "action": "added",
+      "reason": "Verified native capability or generic foundational experience explicitly requested by the operator.",
+      "quality_or_ux_benefit": "Learn actual preferences and preserve memory while diagnosing the real boundary."
+    },
+    {
+      "kind": "skill",
+      "source_name": "first-contact",
+      "target_name": "first-contact",
+      "action": "adapted",
+      "reason": "Preserve the generic method while removing unsupported product assumptions and aligning automatic core guidance.",
+      "quality_or_ux_benefit": "Provide a reusable evidence-based procedure adapted to the native application, with user instructions and permissions controlling its application."
+    },
+    {
+      "kind": "skill",
+      "source_name": "prove-the-real-target",
+      "target_name": "prove-the-real-target",
+      "action": "adapted",
+      "reason": "Preserve the generic method while removing unsupported product assumptions and aligning automatic core guidance.",
+      "quality_or_ux_benefit": "Provide a reusable evidence-based procedure adapted to the native application, with user instructions and permissions controlling its application."
+    },
+    {
+      "kind": "skill",
+      "source_name": "board-hygiene",
+      "action": "omitted",
+      "reason": "The source behavior does not apply to Goblin."
+    },
+    {
+      "kind": "skill",
+      "source_name": "search-before-building",
+      "target_name": "search-before-building",
+      "action": "adapted",
+      "reason": "Preserve the generic method while removing unsupported product assumptions and aligning automatic core guidance.",
+      "quality_or_ux_benefit": "Provide a reusable evidence-based procedure adapted to the native application, with user instructions and permissions controlling its application."
+    },
+    {
+      "kind": "skill",
+      "source_name": "small-model-turn",
+      "target_name": "small-model-turn",
+      "action": "adapted",
+      "reason": "Preserve the generic method while removing unsupported product assumptions and aligning automatic core guidance.",
+      "quality_or_ux_benefit": "Provide a reusable evidence-based procedure adapted to the native application, with user instructions and permissions controlling its application."
+    }
+  ],
+  "license_root": "Application resources or source checkout",
+  "guidance_authority": "Generic product and working knowledge. Actual user instructions, preferences, authorizations, and tool permissions control. No hidden priority or fixed persona is added.",
+  "native_additions_type": "discovery; no unconditional authority marker added"
+}

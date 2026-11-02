@@ -1,0 +1,18 @@
+{
+  "package": "goblin_core",
+  "components": [
+    {
+      "name": "AetherMind",
+      "path": "goblin_core/vendor_aethermind",
+      "license_file": "AETHERMIND_LICENSE",
+      "modified": true
+    },
+    {
+      "name": "Goblin foundational seed pack",
+      "path": "Resources/Seeds",
+      "license_file": "LICENSE",
+      "modified": false,
+      "adaptation_inventory": "Resources/Seeds/SOURCE.json"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+src-tauri/target/
+src-tauri/binaries/
+dist/
+build/
+*.AppImage
+*.deb
+.DS_Store

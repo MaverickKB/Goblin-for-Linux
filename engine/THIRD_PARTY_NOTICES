@@ -1,0 +1,181 @@
+Goblin third-party notices
+==========================
+
+Goblin bundles a CPython runtime for Apple Silicon macOS. The release build
+uses the exact python-build-standalone archive pinned in product.json, verifies
+its SHA-256, and removes development-only components before signing the app.
+
+Runtime archive
+---------------
+Project: python-build-standalone
+Build: 20261013
+Asset: cpython-3.14.8+20261013-aarch64-apple-darwin-install_only_stripped.tar.gz
+URL: https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-apple-darwin-install_only_stripped.tar.gz
+SHA-256: 994adadc202c5df0b4570192cc9a70e3f2c131e512f4a125c56efa8562f44b28
+
+The matching pgo+lto full archive for build 20261013 contains python/PYTHON.json
+and the upstream license texts. PYTHON.json records each extension's static
+library and license path. The full archive is:
+https://github.com/astral-sh/python-build-standalone/releases/download/20261013/cpython-3.14.8%2B20261013-aarch64-apple-darwin-pgo%2Blto-full.tar.zst
+SHA-256: 5806ddb9d95d73796c87e1aeb45bf7ec984d08ae9eb94f9020436052b32ce498
+
+The runtime reports CPython 3.14.8, OpenSSL 3.5.9, SQLite 3.53.1, and the
+editline readline backend. The release build checks those three version strings
+against the bundled interpreter and fails if this file disagrees.
+
+CPython 3.14.8
+--------------
+Copyright (c) 2001 Python Software Foundation; All Rights Reserved.
+
+Goblin redistributes the interpreter at bin/python3.14 and the shared library
+at lib/libpython3.14.dylib.
+
+License: Python Software Foundation License Version 2 and CNRI-Python.
+Full text: Runtime/THIRD_PARTY_LICENSES/CPython-3.14.8.txt
+The runtime also carries the PSF license at
+Runtime/Python/lib/python3.14/LICENSE.txt.
+Source: https://www.python.org/downloads/release/python-3148/
+
+OpenSSL 3.5.9
+-------------
+The built-in _ssl and _hashlib modules statically link OpenSSL 3.5.9.
+ssl.OPENSSL_VERSION reports "OpenSSL 3.5.9 29 Sep 2026".
+
+License: Apache License 2.0.
+Full text: Runtime/THIRD_PARTY_LICENSES/OpenSSL-3.5.9.txt
+Source: https://github.com/openssl/openssl/releases/tag/openssl-3.5.9
+
+SQLite 3.53.1
+-------------
+The built-in _sqlite3 module statically links SQLite 3.53.1.
+sqlite3.sqlite_version reports "3.53.1".
+
+License: Public domain.
+Full text: Runtime/THIRD_PARTY_LICENSES/SQLite-3.53.1.txt
+Source: https://www.sqlite.org/2026/sqlite-autoconf-3530100.tar.gz
+
+Expat 2.9.0
+-----------
+The built-in pyexpat module statically links Expat 2.9.0.
+
+License: MIT.
+Full text: Runtime/THIRD_PARTY_LICENSES/Expat-2.9.0.txt
+Source: https://github.com/libexpat/libexpat/releases/tag/R_2_9_0
+
+libffi 3.8.0
+------------
+The built-in _ctypes module statically links libffi 3.8.0.
+
+License: MIT.
+Full text: Runtime/THIRD_PARTY_LICENSES/libffi-3.8.0.txt
+Source: https://github.com/libffi/libffi/releases/tag/v3.8.0
+
+bzip2 1.0.8
+-----------
+The built-in _bz2 module statically links bzip2 1.0.8. The upstream license
+identifier is bzip2-1.0.6; the license text is unchanged in 1.0.8.
+
+License: bzip2-1.0.6.
+Full text: Runtime/THIRD_PARTY_LICENSES/bzip2-1.0.8.txt
+Source: https://sourceware.org/pub/bzip2/bzip2-1.0.8.tar.gz
+
+liblzma 5.8.4
+-------------
+The built-in _lzma module statically links liblzma 5.8.4 from XZ Utils.
+
+License: 0BSD.
+Full text: Runtime/THIRD_PARTY_LICENSES/liblzma-5.8.4.txt
+Source: https://github.com/tukaani-project/xz/releases/tag/v5.8.4
+
+mpdecimal 4.0.0
+---------------
+The built-in _decimal module statically links mpdecimal 4.0.0.
+
+License: BSD-2-Clause.
+Full text: Runtime/THIRD_PARTY_LICENSES/mpdecimal-4.0.0.txt
+Source: https://www.bytereef.org/software/mpdecimal/releases/mpdecimal-4.0.0.tar.gz
+
+zstd 1.5.7
+----------
+The built-in _zstd module statically links Zstandard 1.5.7.
+
+License: BSD-3-Clause.
+Full text: Runtime/THIRD_PARTY_LICENSES/zstd-1.5.7.txt
+Source: https://github.com/python/cpython-source-deps/archive/refs/tags/zstd-1.5.7.tar.gz
+Source SHA-256: f24b52470d12f466e9fa4fcc94e6c530625ada51d7b36de7fdc6ed7e6f499c8e
+
+libuuid 1.0.3
+-------------
+The built-in _uuid module statically links libuuid 1.0.3.
+
+License: BSD-3-Clause.
+Full text: Runtime/THIRD_PARTY_LICENSES/libuuid-1.0.3.txt
+Source: https://sourceforge.net/projects/libuuid/files/libuuid-1.0.3.tar.gz
+
+HACL* hash implementations
+--------------------------
+The built-in _sha1, _sha2, _sha3, _md5, _blake2 and _hmac modules compile
+HACL* hash and HMAC objects into the runtime.
+
+Source revision: 8ba599b2f6c9701b3dc961db895b0856a2210f76
+License: Apache License 2.0.
+Full text: Runtime/THIRD_PARTY_LICENSES/HACL-star-8ba599b2f6c9.txt
+Source: https://github.com/hacl-star/hacl-star/tree/8ba599b2f6c9701b3dc961db895b0856a2210f76
+
+Apple-provided dynamic libraries
+--------------------------------
+The runtime executable and libpython3.14.dylib dynamically link these macOS
+libraries:
+
+- /usr/lib/libSystem.B.dylib
+- /usr/lib/libz.1.dylib
+- /usr/lib/libedit.3.dylib
+- /usr/lib/libncurses.5.4.dylib
+- /usr/lib/libpanel.5.4.dylib
+- CoreFoundation.framework
+- SystemConfiguration.framework
+
+These libraries are provided by macOS and are not included in Goblin. Their
+licenses are not redistributed. The readline module is a built-in module whose
+backend is editline. The build's -lreadline flag resolves to the system libedit,
+so Goblin does not contain GNU Readline or its GPL license text.
+
+Pruned components
+-----------------
+The release build removes these from the app bundle. They are present in the
+upstream archive and the development cache but are not redistributed:
+
+- pip 26.2.1 and ensurepip
+- idle, idlelib and the idle3 command wrappers
+- the pydoc command wrappers
+- tkinter and _tkinter
+- Tcl/Tk 9.0.4 (Tcl 9.0.4 and Tk 9.0.4), Itcl 4.3.8, Thread 3.0.6 and their
+  dylibs and data
+- test, turtledemo, config, pkgconfig, include and share
+
+No license text for these components is included in the app bundle.
+
+Related Goblin notices
+----------------------
+Goblin application source is licensed under the Apache License, Version 2.0. Runtime/LICENSE is that text.
+Runtime/NOTICE records the AetherMind attribution and how the foundational pack is owned.
+Runtime/AETHERMIND_LICENSE is the AetherMind Noncommercial Public License.
+Runtime/SOURCE.json maps those components.
+
+Those files govern Goblin's adapted code and are separate from the CPython
+runtime components listed above.
+
+
+pstack skill procedures and reference assets
+-------------------------------------------
+Goblin includes adapted pstack skills, helper source, and reference/test assets
+from the Cursor plugins repository. The bundled procedures use Goblin's native
+skill tools and preserve the upstream methodology.
+
+Copyright (c) 2026 Lauren Tan.
+License: MIT.
+Full text: Runtime/THIRD_PARTY_LICENSES/pstack-MIT.txt
+The skill directory also retains its own LICENSE.
+Source: https://github.com/cursor/plugins/tree/main/pstack
+Upstream revision: ae5650febf4320793844c12c4adaa937f417f8da
+Bundle provenance: Runtime/goblin_core/baseline_skills/SOURCE.json

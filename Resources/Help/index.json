@@ -1,0 +1,28 @@
+{
+  "documents": [
+    {
+      "id": "user-guide",
+      "title": "User manual",
+      "audience": "user",
+      "file": "user-guide.md"
+    },
+    {
+      "id": "concepts",
+      "title": "How Goblin works",
+      "audience": "user",
+      "file": "concepts.md"
+    },
+    {
+      "id": "developer-guide",
+      "title": "Developer guide",
+      "audience": "developer",
+      "file": "developer-guide.md"
+    },
+    {
+      "id": "bridge-protocol",
+      "title": "Native pipe reference",
+      "audience": "developer",
+      "file": "bridge-protocol.md"
+    }
+  ]
+}

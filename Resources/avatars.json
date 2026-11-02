@@ -1,0 +1,50 @@
+[
+  {
+    "id": "rookie",
+    "name": "Rookie",
+    "file": "Avatars/rookie.png",
+    "standing_file": "Standing/rookie.png"
+  },
+  {
+    "id": "guard",
+    "name": "Guard",
+    "file": "Avatars/guard.png",
+    "standing_file": "Standing/guard.png"
+  },
+  {
+    "id": "lookout",
+    "name": "Lookout",
+    "file": "Avatars/lookout.png",
+    "standing_file": "Standing/lookout.png"
+  },
+  {
+    "id": "nerd",
+    "name": "Nerd",
+    "file": "Avatars/nerd.png",
+    "standing_file": "Standing/nerd.png"
+  },
+  {
+    "id": "scout",
+    "name": "Scout",
+    "file": "Avatars/scout.png",
+    "standing_file": "Standing/scout.png"
+  },
+  {
+    "id": "scribe",
+    "name": "Scribe",
+    "file": "Avatars/scribe.png",
+    "standing_file": "Standing/scribe.png"
+  },
+  {
+    "id": "tinkerer",
+    "name": "Tinkerer",
+    "file": "Avatars/tinkerer.png",
+    "standing_file": "Standing/tinkerer.png"
+  },
+  {
+    "id": "veteran",
+    "name": "Veteran",
+    "file": "Avatars/veteran.png",
+    "standing_file": "Standing/veteran.png"
+  }
+]
