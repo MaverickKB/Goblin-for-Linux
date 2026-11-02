@@ -176,7 +176,8 @@
         var box = document.getElementById('boot-error');
         if (!box) return;
         box.hidden = false;
-        box.textContent = 'Startup error: ' + (event.message || 'a script failed to load');
+        box.textContent = 'Startup error: ' + (event.message || 'a script failed to load')
+          + (event.error && event.error.stack ? '\n' + event.error.stack : '');
       });
       window.addEventListener('unhandledrejection', function (event) {
         var box = document.getElementById('boot-error');
