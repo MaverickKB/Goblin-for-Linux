@@ -49,8 +49,13 @@ export async function connect() {
   await tauri.event.listen('engine://frame', (event) => {
     let frame;
     try {
-      frame = JSON.parse(event.payload);
+      frame = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
     } catch (error) {
+      deliver({ event: 'frame_error', data: { message: error.message } });
+      return;
+    }
+    if (!frame || typeof frame !== 'object') {
+      deliver({ event: 'frame_error', data: { message: 'The engine sent a frame that was not an object.' } });
       return;
     }
     if (frame.event) {

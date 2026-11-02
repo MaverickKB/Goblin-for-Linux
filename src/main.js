@@ -143,6 +143,10 @@ function handleFrame(frame) {
     applyActivity(frame.data);
     return;
   }
+  if (frame.event === 'frame_error') {
+    setStatus(frame.data.message, 'error');
+    return;
+  }
   if (frame.event === 'approval') {
     approvals.show(frame.data);
     updateCharacter({ approval: true });
