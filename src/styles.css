@@ -520,6 +520,8 @@ select {
 }
 
 .settings {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px 28px 40px;
   display: grid;
