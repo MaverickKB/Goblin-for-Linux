@@ -126,14 +126,14 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
             match line {
                 Ok(text) => {
                     eprintln!("engine frame bytes={}", text.len());
-                    if let Err(error) = app_handle.emit("engine://frame", text) {
+                    if let Err(error) = app_handle.emit("engine-frame", text) {
                         eprintln!("engine emit failed: {error}");
                     }
                 }
                 Err(_) => break,
             }
         }
-        let _ = app_handle.emit("engine://exit", "");
+        let _ = app_handle.emit("engine-exit", "");
     });
 
     Ok(EngineState {

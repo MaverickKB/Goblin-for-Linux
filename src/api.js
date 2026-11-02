@@ -46,7 +46,7 @@ export async function connect() {
   if (!tauri) {
     throw new Error('This page must run inside the Goblin app.');
   }
-  await tauri.event.listen('engine://frame', (event) => {
+  await tauri.event.listen('engine-frame', (event) => {
     let frame;
     try {
       frame = typeof event.payload === 'string' ? JSON.parse(event.payload) : event.payload;
@@ -74,7 +74,7 @@ export async function connect() {
       entry.resolve(frame.result);
     }
   });
-  await tauri.event.listen('engine://exit', () => {
+  await tauri.event.listen('engine-exit', () => {
     for (const entry of pending.values()) {
       clearTimeout(entry.timer);
       entry.reject(new Error('The engine stopped.'));
