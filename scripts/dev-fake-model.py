@@ -19,6 +19,10 @@ def last_user_text(payload):
     return text
 
 
+def is_compaction(payload):
+    return last_user_text(payload).startswith("Write one faithful summary line")
+
+
 def wants_shell(payload):
     messages = payload.get("messages") or []
     has_tool_result = any(message.get("role") == "tool" for message in messages)
@@ -54,6 +58,18 @@ class Handler(BaseHTTPRequestHandler):
             [message.get("role"), str(message.get("content"))[:120]]
             for message in payload.get("messages") or []
         ]), flush=True)
+        if is_compaction(payload):
+            text = "Compacted summary of the conversation so far."
+            body = json.dumps({
+                "choices": [{"message": {"content": text}, "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            }).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         if wants_shell(payload) and payload.get("stream"):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
