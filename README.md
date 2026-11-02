@@ -12,6 +12,24 @@ This port is in progress. The engine is vendored from Goblin for Mac 0.2.0. The 
 - `src/` is the web UI.
 - `scripts/goblin-credentials` is the Linux credential helper. It speaks the same JSON protocol as the Mac helper and stores secrets in the desktop keyring through `secret-tool`.
 
+## Install
+
+Download `Goblin_0.1.0_amd64.deb` from Releases and install it:
+
+```sh
+sudo apt install ./Goblin_0.1.0_amd64.deb
+```
+
+Run Goblin from the applications menu or with `goblin`. On first run, open Settings, set a model base URL and model, or sign in with xAI or OpenAI under Connections. Credentials live in the desktop keyring. Profile data lives in `~/.local/share/goblin`.
+
+## Known limitations in 0.1.0
+
+- Voice is not ported yet.
+- No tray icon yet.
+- The Debian package is the only published format; AppImage is not built.
+- The character uses Canvas 2D; the Mac mesh deformation and face shader are pending.
+- Live xAI device sign-in needs a desktop keyring and is not exercised in CI.
+
 ## Development
 
 Requirements: Ubuntu 24.04 or later, Rust 1.77 or later, Node 20 or later, and the Tauri Linux dependencies (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, `libayatana-appindicator3-dev`, `libasound2-dev`, `libsecret-1-dev`, `libsecret-tools`). Python 3.11 or later is needed for the test suite and build scripts; packaged builds bundle CPython 3.12.16.
