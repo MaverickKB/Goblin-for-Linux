@@ -368,10 +368,11 @@ select {
 .settings {
   overflow-y: auto;
   padding: 24px 28px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  max-width: 760px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+  max-width: 980px;
 }
 
 .section {
@@ -416,6 +417,7 @@ select {
 }
 
 .actions {
+  grid-column: 1 / -1;
   display: flex;
   gap: 14px;
   align-items: center;
