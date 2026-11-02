@@ -4,17 +4,19 @@
 //! speaks newline-delimited JSON on stdin and stdout; this file only moves
 //! bytes between the web UI and that pipe.
 
+use std::collections::VecDeque;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use tauri::{Emitter, Manager, State};
 
 struct EngineState {
     stdin: Mutex<Option<ChildStdin>>,
     child: Mutex<Option<Child>>,
+    frames: Arc<Mutex<VecDeque<String>>>,
 }
 
 impl EngineState {
@@ -120,20 +122,18 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
         .ok_or_else(|| "The engine has no stdout".to_string())?;
 
     let app_handle = app.clone();
+    let frames = Arc::new(Mutex::new(VecDeque::new()));
+    let reader_frames = Arc::clone(&frames);
     std::thread::spawn(move || {
         let reader = BufReader::new(stdout);
         for line in reader.lines() {
             match line {
                 Ok(text) => {
-                    eprintln!("engine frame bytes={}", text.len());
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let literal = serde_json::to_string(&text).unwrap_or_else(|_| "\"\"".to_string());
-                        let script = format!("window.__goblinFrame && window.__goblinFrame({literal});");
-                        if let Err(error) = window.eval(&script) {
-                            eprintln!("engine eval failed: {error}");
+                    if let Ok(mut queue) = reader_frames.lock() {
+                        if queue.len() >= 2000 {
+                            queue.pop_front();
                         }
-                    } else {
-                        eprintln!("engine frame dropped: no main window");
+                        queue.push_back(text);
                     }
                 }
                 Err(_) => break,
@@ -145,7 +145,24 @@ fn spawn_engine(app: &tauri::AppHandle) -> Result<EngineState, String> {
     Ok(EngineState {
         stdin: Mutex::new(Some(stdin)),
         child: Mutex::new(Some(child)),
+        frames,
     })
+}
+
+#[tauri::command]
+fn engine_poll(state: State<'_, EngineState>) -> Result<Vec<String>, String> {
+    let mut queue = state
+        .frames
+        .lock()
+        .map_err(|_| "The frame queue lock was poisoned".to_string())?;
+    let mut batch = Vec::new();
+    while batch.len() < 200 {
+        match queue.pop_front() {
+            Some(line) => batch.push(line),
+            None => break,
+        }
+    }
+    Ok(batch)
 }
 
 #[tauri::command]
@@ -215,7 +232,7 @@ fn main() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![engine_request, open_url])
+        .invoke_handler(tauri::generate_handler![engine_request, engine_poll, open_url])
         .build(tauri::generate_context!())
         .expect("Goblin could not build its window")
         .run(|app_handle, event| {

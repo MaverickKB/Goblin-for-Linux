@@ -80,12 +80,27 @@ export async function connect() {
     throw new Error('This page must run inside the Goblin app.');
   }
   window.__goblinFrame = receive;
-  await tauri.event.listen('engine-exit', () => {
-    for (const entry of pending.values()) {
-      clearTimeout(entry.timer);
-      entry.reject(new Error('The engine stopped.'));
+  let polling = true;
+  const poll = async () => {
+    while (polling) {
+      let frames;
+      try {
+        frames = await tauri.core.invoke('engine_poll');
+      } catch (error) {
+        polling = false;
+        for (const entry of pending.values()) {
+          clearTimeout(entry.timer);
+          entry.reject(new Error('The engine stopped.'));
+        }
+        pending.clear();
+        deliver({ event: 'exit', data: {} });
+        return;
+      }
+      for (const payload of frames) {
+        receive(payload);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 40));
     }
-    pending.clear();
-    deliver({ event: 'exit', data: {} });
-  });
+  };
+  poll();
 }
