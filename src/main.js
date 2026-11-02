@@ -286,7 +286,10 @@ async function boot() {
     const initial = await request('bootstrap');
     modelChip.textContent = 'M:' + (initial && initial.model ? initial.model : 'none');
     initCharacter(characterCanvas, { avatar: 'rookie' })
-      .then(() => { companionCaption.textContent = 'Live'; })
+      .then(() => {
+        companionCaption.textContent = 'Live';
+        chat.appendNote('Character ready.');
+      })
       .catch((error) => {
         chat.appendNote('Character: ' + error.message);
         showStaticCharacter();
