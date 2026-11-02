@@ -1,6 +1,6 @@
 // Window wiring: boot the engine, route frames, switch views.
 
-import { connect, onEvent, request } from './api.js';
+import { connect, listenTo, onEvent, request } from './api.js';
 import * as chat from './chat.js';
 import * as settings from './settings.js';
 import * as approvals from './approvals.js';
@@ -174,6 +174,10 @@ async function boot() {
   try {
     await connect();
     onEvent(handleFrame);
+    await listenTo('tauri://drag-drop', (event) => {
+      const paths = (event.payload && event.payload.paths) || [];
+      chat.addAttachments(paths);
+    });
     chat.initChat();
     approvals.initApprovals();
     settings.initSettings({

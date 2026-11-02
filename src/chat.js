@@ -7,11 +7,14 @@ const emptyState = document.getElementById('empty-state');
 const composer = document.getElementById('composer');
 const input = document.getElementById('input');
 const sendButton = document.getElementById('send');
+const attachButton = document.getElementById('attach');
+const attachmentStrip = document.getElementById('attachments');
 
 const rows = new Map();
 let liveRow = null;
 let pendingLocalId = null;
 let pendingLocalText = '';
+let attached = [];
 
 function formatTime(value) {
   if (!value) {
@@ -49,7 +52,75 @@ function buildRow(row) {
   text.textContent = row.text || '';
 
   article.append(meta, text);
+  if (row.attachments && row.attachments.length > 0) {
+    const files = document.createElement('div');
+    files.className = 'files';
+    for (const path of row.attachments) {
+      const name = document.createElement('span');
+      name.textContent = fileName(path);
+      files.append(name);
+    }
+    article.append(files);
+  }
   return article;
+}
+
+function fileName(path) {
+  const parts = String(path).split('/');
+  return parts[parts.length - 1] || String(path);
+}
+
+export function addAttachments(paths) {
+  if (!Array.isArray(paths)) {
+    return;
+  }
+  const fresh = [];
+  for (const path of paths) {
+    if (typeof path !== 'string' || !path.startsWith('/')) {
+      continue;
+    }
+    if (attached.includes(path)) {
+      continue;
+    }
+    fresh.push(path);
+  }
+  attached = attached.concat(fresh).slice(0, 6);
+  renderAttachments();
+}
+
+function renderAttachments() {
+  attachmentStrip.textContent = '';
+  attachmentStrip.hidden = attached.length === 0;
+  for (const path of attached) {
+    const chip = document.createElement('span');
+    chip.className = 'attachment';
+    const label = document.createElement('span');
+    label.textContent = fileName(path);
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'x';
+    remove.title = 'Remove attachment';
+    remove.addEventListener('click', () => {
+      attached = attached.filter((item) => item !== path);
+      renderAttachments();
+    });
+    chip.append(label, remove);
+    attachmentStrip.append(chip);
+  }
+}
+
+async function openPicker() {
+  try {
+    const result = await window.__TAURI__.core.invoke('plugin:dialog|open', {
+      options: { multiple: true, directory: false, title: 'Attach files' },
+    });
+    if (!result) {
+      return;
+    }
+    addAttachments(Array.isArray(result) ? result : [result]);
+  } catch (error) {
+    appendNote(error.message);
+  }
 }
 
 function labelFor(kind) {
@@ -178,7 +249,7 @@ export async function loadHistory() {
 
 async function send(text) {
   const trimmed = text.trim();
-  if (!trimmed) {
+  if (!trimmed && attached.length === 0) {
     return;
   }
   pendingLocalId = 'local-' + Date.now();
@@ -187,14 +258,20 @@ async function send(text) {
     id: pendingLocalId,
     kind: 'user',
     name: 'You',
-    text: trimmed,
+    text: trimmed || 'Attached files',
     timestamp: new Date().toISOString(),
+    attachments: attached.slice(),
   });
   input.value = '';
   resizeInput();
   sendButton.disabled = true;
   try {
-    await request('chat/send', { text: trimmed });
+    await request('chat/send', {
+      text: trimmed || 'See the attached files.',
+      attachments: attached.slice(),
+    });
+    attached = [];
+    renderAttachments();
     clearStream();
   } catch (error) {
     const article = rows.get(pendingLocalId);
@@ -228,6 +305,7 @@ function resizeInput() {
 }
 
 export function initChat() {
+  attachButton.addEventListener('click', openPicker);
   composer.addEventListener('submit', (event) => {
     event.preventDefault();
     send(input.value);

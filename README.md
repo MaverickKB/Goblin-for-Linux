@@ -39,14 +39,17 @@ npm run tauri dev
 
 ## Status
 
-- [x] Engine vendored and running on Linux Python
+- [x] Engine vendored and running on Linux Python, 405 tests green
 - [x] Linux credential helper
-- [ ] Tauri shell, chat, composer, attachments
-- [ ] Settings: connections, autonomy, continuity, tools
+- [x] Tauri shell, chat, history, composer
+- [x] Settings: personality, model connection, autonomy switch
+- [x] Tool approvals
+- [ ] Attachments
+- [ ] Connections and accounts
 - [ ] Animated avatars
 - [ ] Voice
-- [ ] Accounts, notifications, tray
-- [ ] Computer use through xdotool
+- [ ] Notifications and tray
+- [ ] Computer use controls
 - [ ] AppImage and deb packaging
 
 ## License

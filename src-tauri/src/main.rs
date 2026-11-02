@@ -146,6 +146,7 @@ fn engine_request(state: State<'_, EngineState>, frame: String) -> Result<(), St
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let handle = app.handle().clone();
             let state = spawn_engine(&handle).map_err(|message| {

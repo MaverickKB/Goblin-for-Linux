@@ -29,6 +29,13 @@ export function onEvent(handler) {
   handlers.push(handler);
 }
 
+export function listenTo(event, handler) {
+  if (!tauri) {
+    return Promise.resolve();
+  }
+  return tauri.event.listen(event, handler);
+}
+
 function deliver(frame) {
   for (const handler of handlers) {
     handler(frame);
