@@ -186,6 +186,13 @@ fn main() {
                 ))
             })?;
             app.manage(state);
+            let probe_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                std::thread::sleep(std::time::Duration::from_millis(800));
+                if let Err(error) = probe_handle.emit("ui-probe", "hello") {
+                    eprintln!("ui probe emit failed: {error}");
+                }
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![engine_request, open_url])

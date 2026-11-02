@@ -254,6 +254,9 @@ function wireAutonomy() {
 async function boot() {
   try {
     setStatus('Connecting', 'busy');
+    window.__TAURI__.event.listen('ui-probe', (event) => {
+      setStatus('Probe ' + event.payload, 'busy');
+    });
     await connect();
     setStatus('Loading', 'busy');
     onEvent(handleFrame);
