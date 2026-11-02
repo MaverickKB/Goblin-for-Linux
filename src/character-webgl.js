@@ -68,7 +68,7 @@ function mirroredArm(rig) {
   return rig.arm.map((point) => [2 * axis - point[0], point[1]]);
 }
 
-function buildMesh(rig, aspect) {
+export function buildMesh(rig, aspect, columns = COLUMNS, rows = ROWS) {
   const arm2 = mirroredArm(rig);
   const neckY = rig.neck[1];
   const shoulder = rig.arm[0];
@@ -79,10 +79,10 @@ function buildMesh(rig, aspect) {
   const wrist2 = arm2[2];
   const vertices = [];
 
-  for (let row = 0; row <= ROWS; row++) {
-    for (let column = 0; column <= COLUMNS; column++) {
-      const u = column / COLUMNS;
-      const v = row / ROWS;
+  for (let row = 0; row <= rows; row++) {
+    for (let column = 0; column <= columns; column++) {
+      const u = column / columns;
+      const v = row / rows;
       const point = { x: u, y: 1 - v };
 
       const headWeight = smooth((neckY + 0.025 - point.y) / 0.085);
@@ -131,10 +131,10 @@ function buildMesh(rig, aspect) {
       });
     }
   }
-  return { vertices, rig, aspect };
+  return { vertices, rig, aspect, columns, rows };
 }
 
-function destinationFor(vertex, mesh, pose) {
+export function destinationFor(vertex, mesh, pose) {
   const rig = mesh.rig;
   const aspect = mesh.aspect;
   const neck = rig.neck;
@@ -217,7 +217,7 @@ function advanceSpring(spring, target, seconds, response) {
   spring.velocity = (spring.velocity - omega * change) * decay;
 }
 
-function createMotion() {
+export function createMotion() {
   let elapsed = 0;
   const listening = createSpring();
   const thinking = createSpring();

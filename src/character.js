@@ -1,7 +1,9 @@
-// Character entry point: prefer the Mac mesh renderer, fall back to Canvas 2D.
+// Character entry point: mesh renderer on Canvas 2D, optional WebGL later.
 
 import { initWebGLCharacter, setCharacterSignals as setWebGLSignals } from './character-webgl.js';
 import { initCanvasCharacter, setCharacterSignals as setCanvasSignals } from './character-canvas.js';
+
+const ENABLE_WEBGL = false;
 
 export function setCharacterSignals(partial) {
   setWebGLSignals(partial);
@@ -23,7 +25,7 @@ function webglAvailable() {
 }
 
 export async function initCharacter(canvas, options = {}) {
-  if (webglAvailable()) {
+  if (ENABLE_WEBGL && webglAvailable()) {
     try {
       const renderer = await initWebGLCharacter(canvas, options);
       document.body.dataset.renderer = 'webgl';
