@@ -10,6 +10,7 @@ import * as tools from './tools.js';
 import * as computer from './computer.js';
 import * as voice from './voice.js';
 import { initCharacter, setCharacterSignals } from './character.js';
+import { describeActivity } from './activity.js';
 
 const app = document.getElementById('app');
 const board = document.getElementById('board');
@@ -132,6 +133,7 @@ function applySnapshot(next) {
   autonomyLabel.textContent = autonomous ? 'Autonomy on' : 'Autonomy off';
   autonomyPill.classList.toggle('on', autonomous);
   approvals.sync(next.pending_approvals);
+  settings.noteCompaction(next.compaction);
   floor.renderContinuity(next.memory);
   tools.renderTools(next);
   updateCharacter({
@@ -180,6 +182,10 @@ function handleFrame(frame) {
     applyActivity(frame.data);
     return;
   }
+  if (frame.event === 'compaction') {
+    settings.noteCompaction(frame.data);
+    return;
+  }
   if (frame.event === 'frame_error') {
     showBootError(frame.data.message);
     return;
@@ -203,37 +209,17 @@ function handleFrame(frame) {
 
 function applyActivity(data) {
   const phase = data.phase || '';
-  if (phase === 'ready') {
-    setLive('Ready');
-    updateCharacter({ working: false, thinking: false });
-    return;
+  const shown = describeActivity(phase, data);
+  if (shown.live) {
+    setLive(shown.live.text, shown.live.detail);
   }
-  if (phase === 'heartbeat') {
-    return;
+  const character = { ...shown.character };
+  if (character.bumpToken) {
+    delete character.bumpToken;
+    character.activityToken = characterSignals.activityToken + 1;
   }
-  if (phase === 'model_start') {
-    setLive('Thinking');
-    updateCharacter({ thinking: true, working: false });
-    return;
-  }
-  if (phase === 'tool') {
-    const toolName = String(data.text || '').trim().split(/\s+/)[0] || 'tool';
-    setLive('Working', data.text || '');
-    updateCharacter({
-      working: true,
-      thinking: false,
-      toolKind: toolName,
-      activityToken: characterSignals.activityToken + 1,
-    });
-    return;
-  }
-  if (phase === 'compacting') {
-    setLive('Compacting history');
-    updateCharacter({ working: true });
-    return;
-  }
-  if (phase === 'status' && data.text) {
-    setLive(data.text);
+  if (Object.keys(character).length) {
+    updateCharacter(character);
   }
 }
 
