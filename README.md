@@ -49,6 +49,12 @@ Run the engine tests:
 python3 -m unittest discover -s Tests/Python
 ```
 
+Run the frontend tests (Node 20 or later, no extra dependencies):
+
+```sh
+node --test Tests/js/*.test.mjs
+```
+
 Run the engine by hand:
 
 ```sh

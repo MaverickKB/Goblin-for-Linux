@@ -103,12 +103,19 @@
 
             <div class="section">
               <h3>Model</h3>
-              <label>Base URL
+              <label>Provider
+                <select id="model-connection"></select>
+              </label>
+              <label id="model-base-url-field">Base URL
                 <input id="model-base-url" type="text" placeholder="http://127.0.0.1:8080/v1" />
               </label>
-              <label>Model
-                <input id="model" type="text" placeholder="model name" />
+              <label id="model-field">Model
+                <select id="model"></select>
               </label>
+              <label id="model-custom-field" hidden>Model id
+                <input id="model-custom" type="text" placeholder="model id" />
+              </label>
+              <span id="model-status" class="muted"></span>
               <label>Protocol
                 <select id="api-kind">
                   <option value="chat_completions">Chat completions</option>
@@ -120,6 +127,22 @@
                 <button class="primary" id="settings-save" type="button">Save settings</button>
                 <span id="settings-status" class="muted"></span>
               </div>
+            </div>
+
+            <div class="section">
+              <h3>Compression</h3>
+              <p class="muted">History summaries run in the background on their own route. They never appear in chat.</p>
+              <label>Provider
+                <select id="compactor-connection"></select>
+              </label>
+              <label id="compactor-model-field">Model
+                <select id="compactor-model"></select>
+              </label>
+              <label id="compactor-custom-field" hidden>Model id
+                <input id="compactor-custom" type="text" placeholder="model id" />
+              </label>
+              <span id="compactor-status" class="muted"></span>
+              <span id="compaction-activity" class="muted"></span>
             </div>
 
             <div class="section">
