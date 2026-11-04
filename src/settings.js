@@ -47,7 +47,7 @@ function setStatus(element, text, tone) {
 
 function fillSelect(select, entries, selected) {
   const seen = entries.some((entry) => entry.value === selected);
-  select.textContent = '';
+  select.replaceChildren();
   for (const entry of entries) {
     const option = document.createElement('option');
     option.value = entry.value;
@@ -61,9 +61,9 @@ function fillSelect(select, entries, selected) {
     const option = document.createElement('option');
     option.value = selected;
     option.textContent = providerName(selected) + ' (not configured)';
-    option.selected = true;
     select.append(option);
   }
+  select.value = selected;
 }
 
 function providerEntries(includeInherit) {
@@ -110,7 +110,7 @@ function loadCatalog(provider) {
 
 function renderModelSelect(select, provider, fetched, savedId) {
   const options = modelOptions(provider, fetched, savedId);
-  select.textContent = '';
+  select.replaceChildren();
   if (options.length === 0) {
     const option = document.createElement('option');
     option.value = '';
@@ -118,6 +118,7 @@ function renderModelSelect(select, provider, fetched, savedId) {
     option.disabled = true;
     option.selected = true;
     select.append(option);
+    select.value = '';
     return;
   }
   for (const model of options) {
@@ -131,6 +132,8 @@ function renderModelSelect(select, provider, fetched, savedId) {
     }
     select.append(option);
   }
+  const chosen = options.some((model) => model.id === savedId) ? savedId : options[0].id;
+  select.value = chosen;
 }
 
 function unknownWarning(provider, savedId) {
