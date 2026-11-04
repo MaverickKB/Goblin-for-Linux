@@ -741,3 +741,7 @@ svg {
   white-space: pre-wrap;
   font: 11px/1.4 "SF Mono", "DejaVu Sans Mono", monospace;
 }
+
+.section label[hidden] {
+  display: none;
+}
