@@ -585,14 +585,14 @@ def read_audit(config):
 
 
 def _sources(raw):
-    """Every signal has a switch. A missing switch is on. An unknown one is refused."""
+    """Every signal has a switch. A missing switch is on.
+
+    An unknown one is ignored, so a floor written by another build still loads.
+    """
     if raw is None:
         return {name: True for name in SIGNALS}
     if not isinstance(raw, dict):
         raise FloorDefinitionError('sources', 'sources', 'must be an object')
-    unknown = set(raw) - set(SIGNALS)
-    if unknown:
-        raise FloorDefinitionError('sources', 'sources', 'unknown source %s' % ', '.join(sorted(unknown)))
     out = {}
     for name in SIGNALS:
         if name not in raw:

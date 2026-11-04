@@ -7,11 +7,28 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'Runtime'))
 
-from goblin_core.floor_definition import FloorDefinitionError, default_definition, evaluate, validate_definition
+from goblin_core.floor_definition import (
+    _COMPOSE_KEYS,
+    FloorDefinitionError,
+    default_definition,
+    evaluate,
+    validate_definition,
+)
 from goblin_core.floor_signals import SIGNALS
+
+# The only compose keys a floor needs to act. Everything else is user data.
+GENERIC_COMPOSE = {
+    'world_view', 'world_view_max_chars', 'world_view_intro', 'wake_score',
+    'stale_seconds', 'stale_label',
+    'footer', 'pressure_intro', 'coordination_paragraph', 'quiet_paragraph',
+}
 
 
 class FloorDefaultTests(unittest.TestCase):
+    def test_shipped_floor_compose_is_exactly_generic(self):
+        self.assertEqual(set(default_definition()['compose']), GENERIC_COMPOSE)
+        self.assertEqual(_COMPOSE_KEYS, GENERIC_COMPOSE)
+
     def test_shipped_floor_has_no_event_rules(self):
         definition = default_definition()
         self.assertEqual(definition['rules'], [])
