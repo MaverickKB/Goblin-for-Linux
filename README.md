@@ -43,13 +43,19 @@ Run Goblin from the applications menu or with `goblin`. On first run, open Setti
 
 Requirements: Ubuntu 24.04 or later, Rust 1.77 or later, Node 20 or later, and the Tauri Linux dependencies (`libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `librsvg2-dev`, `libayatana-appindicator3-dev`, `libasound2-dev`, `libsecret-1-dev`, `libsecret-tools`). Python 3.11 or later is needed for the test suite and build scripts; packaged builds bundle CPython 3.12.16.
 
-Run the engine tests:
+Run both suites:
+
+```sh
+python3 scripts/check.py
+```
+
+Run the engine tests alone:
 
 ```sh
 python3 -m unittest discover -s Tests/Python
 ```
 
-Run the frontend tests (Node 20 or later, no extra dependencies):
+Run the frontend tests alone (Node 20 or later, no extra dependencies):
 
 ```sh
 node --test Tests/js/*.test.mjs
