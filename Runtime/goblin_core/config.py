@@ -25,7 +25,7 @@ API_KINDS = ("chat_completions", "responses", "cli_worker")
 REASONING_LEVELS = ("off", "low", "medium", "high")
 APPROVALS = ("ask", "unleashed")
 VOICE_AUTHS = ("oauth", "api_key")
-ADVANCED_SECTIONS = ("tools", "skills", "mcp_servers", "remotes", "autonomy", "computer_use", "cua", "compactor", "aethermind")
+ADVANCED_SECTIONS = ("tools", "skills", "prompt", "mcp_servers", "remotes", "autonomy", "computer_use", "cua", "compactor", "aethermind")
 
 SECRET_WORDS = ("api_key", "apikey", "token", "secret", "password", "credential")
 
@@ -60,6 +60,31 @@ class ToolsSettings:
     fetch_max_bytes: int = 1000000
     fetch_timeout: float = 20.0
     shell_max_timeout: float = 600.0
+    # How the model sees the tool surface. all: every registered schema every
+    # turn. scoped: the core patterns below stay in the model-facing schema and
+    # everything else stays registered behind one tool_use envelope.
+    exposure: str = "scoped"
+    # fnmatch patterns over tool names that stay in the model-facing schema when
+    # exposure is scoped. A deferred tool still executes when the model calls it
+    # directly; the registry, not the schema, is the capability boundary.
+    core: list = field(default_factory=lambda: [
+        "shell", "read_file", "read_bytes", "read_image", "list_dir", "glob", "grep",
+        "git_read", "write_file", "edit_file", "apply_patch", "move_path", "copy_path",
+        "delete_path", "mkdir", "process", "web_fetch", "zoom", "date",
+        "memory_recall", "memory_tree", "memory_note", "skill_search", "skill_load",
+        "skill_read", "history_search", "history_read", "history_zoom", "session_briefs",
+        "spawn_agent", "wait_agents", "agent_backends", "app_help",
+    ])
+    # Model-facing prune for tool results older than the newest one in a turn.
+    # The stored log keeps the original text; the prompt gets head, a marker,
+    # and tail. 0 disables the prune.
+    history_result_chars: int = 8192
+    # How the readable copy of the tool schemas reaches the prompt. The backend
+    # always gets the authoritative schema through the API tools parameter; this
+    # copy exists for models and CLIs that read tool descriptions from the prompt.
+    # full: complete schema JSON. compact: one line per tool. names: bare names.
+    # off: no block.
+    inline_schemas: str = "compact"
 
 
 @dataclass
@@ -73,6 +98,21 @@ class SkillsSettings:
     search_limit: int = 20
     disabled: list = field(default_factory=list)
     extra_dirs: list = field(default_factory=list)
+    # How the governing baseline reaches the stable prompt. index: names and
+    # one-line triggers; the body loads through skill_load. inline: the complete
+    # bodies in every prompt (larger; for a small model that will not call tools).
+    baseline_mode: str = "index"
+
+
+@dataclass
+class PromptSettings:
+    # One assembled first request at or above this many bytes leaves one budget
+    # note in the session log naming every component. 0 turns the note off.
+    budget_note_bytes: int = 120000
+    # Ceiling for one assembled first request, in bytes. A request over the
+    # ceiling first re-renders the gist smaller, then the turn refuses with a
+    # prompt_budget error instead of sending. 0 disables the ceiling.
+    max_bytes: int = 400000
 
 
 @dataclass
@@ -442,6 +482,7 @@ class Config:
         self.advanced = deepcopy(values["advanced"])
         self.tools = _tools_settings(values["advanced"].get("tools"), self.approval)
         self.skills = _skills_settings(values["advanced"].get("skills"))
+        self.prompt_budget = _prompt_settings(values["advanced"].get("prompt"))
         self.mcp_servers = {}
         for name, raw in (values["advanced"].get("mcp_servers") or {}).items():
             self.mcp_servers[name] = _mcp_server(name, raw)
@@ -624,10 +665,21 @@ def _tools_settings(raw, approval):
         "list_limit", "grep_limit", "grep_scan", "git_log_limit", "spill_dir",
         "output_tail_chars", "read_line_limit", "glob_limit", "read_bytes_limit",
         "image_bytes_limit", "fetch_max_bytes", "fetch_timeout", "shell_max_timeout",
+        "exposure", "core", "history_result_chars", "inline_schemas",
     }
     extra = set(raw) - known
     if extra:
         raise ConfigError("advanced.tools has unknown fields: " + ", ".join(sorted(extra)))
+    if "exposure" in raw:
+        if raw["exposure"] not in ("all", "scoped"):
+            raise ConfigError("advanced.tools.exposure must be all or scoped")
+        base.exposure = raw["exposure"]
+    if "core" in raw:
+        base.core = _string_list(raw["core"], "advanced.tools.core")
+    if "inline_schemas" in raw:
+        if raw["inline_schemas"] not in ("full", "compact", "names", "off"):
+            raise ConfigError("advanced.tools.inline_schemas must be full, compact, names, or off")
+        base.inline_schemas = raw["inline_schemas"]
     if "approval_classes" in raw:
         if not isinstance(raw["approval_classes"], dict):
             raise ConfigError("advanced.tools.approval_classes must be an object")
@@ -648,6 +700,7 @@ def _tools_settings(raw, approval):
         ("grep_scan", 1, 100000), ("git_log_limit", 1, 100), ("output_tail_chars", 1, 1000000),
         ("read_line_limit", 1, 100000), ("glob_limit", 1, 2000), ("read_bytes_limit", 1, 100000000),
         ("image_bytes_limit", 1, 100000000), ("fetch_max_bytes", 1, 100000000),
+        ("history_result_chars", 0, 1000000),
     ):
         if name in raw:
             setattr(base, name, _whole(raw[name], "advanced.tools." + name, minimum, maximum))
@@ -669,12 +722,17 @@ def _skills_settings(raw):
     if not isinstance(raw, dict):
         raise ConfigError("advanced.skills must be an object")
     known = {"enabled", "shelf", "trusted_projects", "project_dirs", "note_bytes",
-             "note_description_chars", "search_limit", "disabled", "extra_dirs"}
+             "note_description_chars", "search_limit", "disabled", "extra_dirs",
+             "baseline_mode"}
     extra = set(raw) - known
     if extra:
         raise ConfigError("advanced.skills has unknown fields: " + ", ".join(sorted(extra)))
     if "enabled" in raw:
         base.enabled = _bool(raw["enabled"], "advanced.skills.enabled")
+    if "baseline_mode" in raw:
+        if raw["baseline_mode"] not in ("index", "inline"):
+            raise ConfigError("advanced.skills.baseline_mode must be index or inline")
+        base.baseline_mode = raw["baseline_mode"]
     if "shelf" in raw:
         base.shelf = _text(raw["shelf"], "advanced.skills.shelf")
     for name in ("trusted_projects", "project_dirs", "disabled", "extra_dirs"):
@@ -684,6 +742,24 @@ def _skills_settings(raw):
                           ("search_limit", 1)):
         if name in raw:
             setattr(base, name, _whole(raw[name], "advanced.skills." + name, minimum))
+    return base
+
+
+def _prompt_settings(raw):
+    base = PromptSettings()
+    if raw is None:
+        return base
+    if not isinstance(raw, dict):
+        raise ConfigError("advanced.prompt must be an object")
+    known = {"budget_note_bytes", "max_bytes"}
+    extra = set(raw) - known
+    if extra:
+        raise ConfigError("advanced.prompt has unknown fields: " + ", ".join(sorted(extra)))
+    for name, minimum, maximum in (
+        ("budget_note_bytes", 0, 100000000), ("max_bytes", 0, 100000000),
+    ):
+        if name in raw:
+            setattr(base, name, _whole(raw[name], "advanced.prompt." + name, minimum, maximum))
     return base
 
 

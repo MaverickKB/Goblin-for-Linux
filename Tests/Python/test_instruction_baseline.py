@@ -19,6 +19,8 @@ def write_skill(root, name, body):
 
 class InstructionBaselineTests(unittest.TestCase):
     def test_portable_procedures_are_retrievable_from_the_real_request_catalog(self):
+        # The 2026-11 prompt-budget contract indexes the governing baseline:
+        # names and triggers in the prompt, bodies through skill_load.
         with tempfile.TemporaryDirectory() as temp:
             backend = FakeBackend([])
             session, _ = make_session(temp, backend)
@@ -27,13 +29,7 @@ class InstructionBaselineTests(unittest.TestCase):
                 prefix = backend.messages[0][0]['content']
                 for name in ('pstack-poteto-mode', 'pstack-no-comments', 'pstack-reflect'):
                     self.assertIn(name + ' (builtin):', prefix)
-
-                core = session.shelf.find('pstack-poteto-mode')['body']
-                self.assertIn(core, prefix)
-                self.assertIn('skill_read pstack-poteto-mode playbooks/<title>.md', core)
-                playbook = session.tools.execute('skill_read', {
-                    'name': 'pstack-poteto-mode', 'path': 'playbooks/bug-fix.md'})
-                self.assertIn('Bug fix', playbook)
+                self.assertNotIn('skill_read pstack-poteto-mode playbooks/<title>.md', prefix)
 
                 procedure = session.tools.execute('skill_load', {'name': 'pstack-no-comments'})
                 self.assertIn('references/comment-auditor.md', procedure)
@@ -70,13 +66,17 @@ class InstructionBaselineTests(unittest.TestCase):
                 session.close()
 
     def test_real_foreground_requests_refresh_next_turn_and_after_restart(self):
+        # Inline mode is the only mode that carries bodies in the prompt, so
+        # the body-refresh contract is asserted there; index mode reloads the
+        # body live through skill_load (covered in test_prompt_budget).
         with tempfile.TemporaryDirectory() as temp:
             backend = FakeBackend([
                 {'content': '', 'tool_calls': [{'id': 'edit', 'name': 'edit_skill', 'arguments': {}}]},
                 {'content': 'first complete', 'tool_calls': []},
                 {'content': 'second complete', 'tool_calls': []},
             ])
-            session, config = make_session(temp, backend)
+            session, config = make_session(temp, backend,
+                                           advanced={'skills': {'baseline_mode': 'inline'}})
             config.skills.note_bytes = 1
             user_root = session.shelf.user_root
             write_skill(user_root, 'pstack-unslop', 'ORIGINAL USER CORE BODY')
@@ -109,8 +109,13 @@ class InstructionBaselineTests(unittest.TestCase):
             resumed, _ = make_session(temp, resumed_backend)
             try:
                 resumed.run_turn('Resume the conversation.')
-                self.assertIn('UPDATED USER CORE BODY', resumed_backend.messages[0][0]['content'])
+                # Index mode carries the name in the prompt; the refreshed body
+                # is what skill_load returns after the restart.
+                self.assertIn('pstack-unslop (user): Complete description for pstack-unslop',
+                              resumed_backend.messages[0][0]['content'])
                 self.assertIn('<effective-skill-catalog>', resumed_backend.messages[0][0]['content'])
+                loaded = resumed.tools.execute('skill_load', {'name': 'pstack-unslop'})
+                self.assertIn('UPDATED USER CORE BODY', loaded)
             finally:
                 resumed.close()
 
@@ -130,7 +135,8 @@ class InstructionBaselineTests(unittest.TestCase):
                     session.shelf.load('pstack-unslop', 30000)
                 config.skills.enabled = True
                 session.shelf.allowed = ('custom-only',)
-                baseline = instruction_baseline(session.shelf)
+                # The inline contract is the one that embeds procedure bodies.
+                baseline = instruction_baseline(session.shelf, 'inline')
                 self.assertIn('<procedure name="pstack-poteto-mode">', baseline)
                 self.assertNotIn('DISABLED OVERRIDE', baseline)
             finally:

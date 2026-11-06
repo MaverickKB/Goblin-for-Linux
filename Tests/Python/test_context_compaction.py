@@ -105,8 +105,13 @@ class ContextCompactionTests(unittest.TestCase):
                 self.assertEqual(results, ['Completed the requested operations.'])
                 self.assertFalse(summary.summary_release.is_set())
                 self.assertEqual(session.log.get(1).text, original)
-                self.assertIn('Completed historical request.', model.main_calls[0][1]['content'])
-                self.assertNotIn(original, model.main_calls[0][1]['content'])
+                # The gist is selected by its <chat> prefix, not by position:
+                # the prompt order is system, tools, gist, state, message.
+                gist_message = next(message for message in model.main_calls[0]
+                                    if isinstance(message.get("content"), str)
+                                    and message["content"].startswith("<chat>"))
+                self.assertIn('Completed historical request.', gist_message['content'])
+                self.assertNotIn(original, gist_message['content'])
                 self.assertEqual(model.main_calls[0][-1]['content'], original)
             finally:
                 summary.summary_release.set()

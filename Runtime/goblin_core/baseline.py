@@ -4,7 +4,13 @@ import json
 from .skills import parse_skill_text, valid_name
 
 
-def instruction_baseline(shelf):
+def instruction_baseline(shelf, baseline_mode='index'):
+    """The governing baseline block for the stable prompt.
+
+    index keeps the prompt small: one line per baseline core with its trigger,
+    the body loaded through skill_load. inline embeds the complete bodies, which
+    is the larger pre-2026-11 shape kept for a model that will not call tools.
+    """
     available = shelf.skills()
     effective = {}
     for skill in available:
@@ -29,24 +35,42 @@ def instruction_baseline(shelf):
         except (OSError, UnicodeDecodeError, ValueError) as error:
             raise RuntimeError('Missing or invalid bundled governing baseline skill: ' + name) from error
         bundled[name] = skill
-    parts = [
-        '<governing-baseline>',
-        'The complete core bodies below are already loaded and active, satisfying their instructions '
-        'to read them in full. Do not reload these same core bodies through skill_load merely to '
-        'activate them. Retrieve referenced detailed playbooks and linked materials autonomously '
-        'when their substantive triggers apply. User instructions and actual '
-        'tool permissions control over defaults, including delegation. Select relevant playbooks '
-        'autonomously using the substantive triggers in these procedures. Do not wait for a named '
-        'skill invocation. Optional procedures and linked details are available only when listed '
-        'in the effective catalog below and through the tools actually provided. The core remains '
-        'present when optional skills are disabled or restricted. Disabled core overrides fall '
-        'back to the bundled core here; this does not enable disabled skill retrieval.',
-    ]
+    if baseline_mode == 'inline':
+        intro = (
+            'The complete core bodies below are already loaded and active, satisfying their instructions '
+            'to read them in full. Do not reload these same core bodies through skill_load merely to '
+            'activate them. Retrieve referenced detailed playbooks and linked materials autonomously '
+            'when their substantive triggers apply. User instructions and actual '
+            'tool permissions control over defaults, including delegation. Select relevant playbooks '
+            'autonomously using the substantive triggers in these procedures. Do not wait for a named '
+            'skill invocation. Optional procedures and linked details are available only when listed '
+            'in the effective catalog below and through the tools actually provided. The core remains '
+            'present when optional skills are disabled or restricted. Disabled core overrides fall '
+            'back to the bundled core here; this does not enable disabled skill retrieval.'
+        )
+    else:
+        intro = (
+            'The governing procedures below are listed by name with their triggers; their bodies are '
+            'not in this prompt. skill_load a procedure before acting on it, and retrieve referenced '
+            'detailed playbooks and linked materials autonomously when their substantive triggers '
+            'apply. User instructions and actual tool permissions control over defaults, including '
+            'delegation. Select relevant procedures autonomously using the substantive triggers listed '
+            'here. Do not wait for a named skill invocation. Optional procedures and linked details '
+            'are available only when listed in the effective catalog below and through the tools '
+            'actually provided. The core remains present when optional skills are disabled or '
+            'restricted. Disabled core overrides fall back to the bundled core here; this does not '
+            'enable disabled skill retrieval.'
+        )
+    parts = ['<governing-baseline>', intro]
     for name in names:
         skill = effective.get(name) or bundled.get(name)
         if skill is None:
             raise RuntimeError('Missing governing baseline skill: ' + name)
-        parts.append('\n<procedure name="' + name + '">\n' + skill['body'] + '\n</procedure>')
+        if baseline_mode == 'inline':
+            parts.append('\n<procedure name="' + name + '">\n' + skill['body'] + '\n</procedure>')
+        else:
+            description = ' '.join(skill['description'].split())
+            parts.append('- ' + name + ': ' + description)
     parts.append('</governing-baseline>\n<effective-skill-catalog>')
     if not available:
         parts.append('Optional skill retrieval is disabled or no skills are assigned.')
