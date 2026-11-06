@@ -3,6 +3,7 @@
 from dataclasses import asdict
 from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
+import fnmatch
 import json
 from pathlib import Path
 import re
@@ -255,6 +256,13 @@ class GoblinSession:
                 [name for name in self.tools.names() if name in tool_ceiling])
         self._bind_live_tools()
         self.tool_ceiling = set(self.tools.names())
+        # Prompt accounting for the current turn. last_prompt_budget is the
+        # per-component byte budget of the turn's first request; the anchors
+        # let the next estimate follow the provider's own token count.
+        self.last_prompt_budget = {}
+        self._last_usage = {}
+        self._last_budget_bytes = 0
+        self._last_components = {}
         self.system_prompt = self._system_prompt()
         # Gist shares chat's model seat unless a distinct compaction route is
         # selected. Required compaction completes before foreground admission,
@@ -296,7 +304,7 @@ class GoblinSession:
         text = SYSTEM_PROMPT_TEMPLATE.format(agent_name=config.agent_name,
                                              operator=config.operator_label(),
                                              user_instructions=self._instructions(config))
-        return instruction_baseline(self.shelf) + '\n\n' + text + SOURCE_GUIDANCE
+        return instruction_baseline(self.shelf, config.skills.baseline_mode) + '\n\n' + text + SOURCE_GUIDANCE
 
     def _instructions(self, config):
         text = config.user_instructions
@@ -610,19 +618,30 @@ class GoblinSession:
         return gist
 
     def _context_messages(self, gist, schema, shown, images, system_prompt, attachment_notes=()):
+        """Build the first request of a turn and record its component sizes.
+
+        Order is stable first, volatile last: system, tools, inherited context,
+        gist, turn state, message. The gist changes every turn, so it must not
+        sit before the tool block; a provider prefix cache would drop the tool
+        bytes every turn (the harness finding this port applies).
+        """
+        tools_block = self._tools_block(schema)
+        turn_state = self._turn_state({s['function']['name'] for s in schema})
         messages = [
             {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': tools_block},
             {'role': 'user', 'content': gist},
-            {'role': 'user', 'content': self._tools_block(schema)},
-            {'role': 'user', 'content': self._turn_state({s['function']['name'] for s in schema})},
+            {'role': 'user', 'content': turn_state},
             {'role': 'user', 'content': shown},
         ]
+        inherited_bytes = 0
         if self._inherited_context:
             context = ('Inherited parent conversation, with parent message IDs. '
                        'Use zoom/date with source="parent" for these IDs. '
                        'Pending-summary placeholders identify raw messages available through zoom; '
                        'they are not summaries. This is separate from your local conversation.\n'
                        '<parent-conversation>\n' + self._inherited_context + '\n</parent-conversation>')
+            inherited_bytes = len(context.encode('utf-8'))
             messages.insert(2, {'role': 'user', 'content': envelope(context, source('historical_mixed', parent_scope=True))})
         for note in attachment_notes:
             messages.append({'role': 'user', 'content': envelope(note, source('attachment_data'))})
@@ -631,6 +650,14 @@ class GoblinSession:
                 {'type': 'text', 'text': envelope(image['caption'], source('attachment_data'))},
                 {'type': 'image_url', 'image_url': {'url': image['data_url']}},
             ]})
+        self._last_components = {
+            'system': len(system_prompt.encode('utf-8')),
+            'tools_block': len(tools_block.encode('utf-8')),
+            'inherited': inherited_bytes,
+            'gist': len(gist.encode('utf-8')),
+            'state': len(turn_state.encode('utf-8')),
+            'message': len(shown.encode('utf-8')),
+        }
         self._context_base_messages = len(messages)
         return messages
 
@@ -667,6 +694,7 @@ class GoblinSession:
         self._stream_text = []
         self._stream_saved = False
         self._last_response_id = ""
+        self._prune_tool_history(messages)
         backend = self._backend_provider()
         options = {}
         _, _, _, _, _, _, level, thinking_budget = self.config.model_binding()
@@ -746,16 +774,190 @@ class GoblinSession:
         lines.append("</turn-state>")
         return "\n".join(lines)
 
-    @staticmethod
-    def _tools_block(schema):
+    def _tools_block(self, schema):
+        """The readable tool copy in the prompt.
+
+        The backend receives the authoritative schema through the API tools
+        parameter, so copying the full JSON here again doubled the cost of
+        every turn. compact (default) is one line per tool; full, names and
+        off are available for models that need more or nothing.
+        """
+        mode = self.config.tools.inline_schemas
+        if mode == "off" or not schema:
+            return ""
         lines = ["<tools>"]
-        for item in schema or []:
+        for item in schema:
             function = item["function"]
-            payload = {"name": function["name"], "description": function.get("description", ""),
-                       "parameters": function.get("parameters", {})}
-            lines.append(json.dumps(payload, sort_keys=True, ensure_ascii=False))
+            if mode == "full":
+                payload = {"name": function["name"], "description": function.get("description", ""),
+                           "parameters": function.get("parameters", {})}
+                lines.append(json.dumps(payload, sort_keys=True, ensure_ascii=False))
+                continue
+            if mode == "names":
+                lines.append(function["name"])
+                continue
+            description = (function.get("description") or "").strip().split("\n")[0]
+            if len(description) > 96:
+                description = description[:93] + "..."
+            lines.append(function["name"] + (" - " + description if description else ""))
         lines.append("</tools>")
         return "\n".join(lines)
+
+    def _route_schema(self):
+        """The model-facing tool schema for this turn.
+
+        Scoped exposure keeps the core tools in the schema and puts the rest
+        behind one tool_use envelope. A deferred tool stays registered and
+        executes when the model names it directly; the registry, not the
+        schema, is the capability boundary.
+        """
+        schemas = self.tools.schemas()
+        if self.config.tools.exposure != "scoped":
+            return schemas
+        patterns = self.config.tools.core or []
+        offered = []
+        deferred = []
+        for item in schemas:
+            name = item["function"]["name"]
+            matched = False
+            for pattern in patterns:
+                if fnmatch.fnmatchcase(name, pattern):
+                    matched = True
+                    break
+            if matched:
+                offered.append(item)
+            else:
+                deferred.append(name)
+        offered.append(self._tool_use_schema(deferred))
+        return offered
+
+    @staticmethod
+    def _tool_use_schema(deferred):
+        names = ", ".join(deferred)
+        return {"type": "function", "function": {
+            "name": "tool_use",
+            "description": ("Invoke a registered tool that is not in this turn short list. "
+                            "Set describe=true to get the tool schema, or pass the arguments "
+                            "object to run it. Deferred tools: " + names),
+            "parameters": {"type": "object",
+                           "properties": {"name": {"type": "string"},
+                                          "arguments": {"type": "object"},
+                                          "describe": {"type": "boolean"}},
+                           "required": ["name"]}}}
+
+    def _unwrap_tool_use(self, call):
+        """Return (inner call, error text, describe text) for one model tool call.
+
+        describe=true returns the tool schema without running it: that is how a
+        model learns the parameter names of a deferred tool. Any other tool_use
+        call names one registered tool and takes the normal call path.
+        """
+        if call.get("name") != "tool_use":
+            return call, "", ""
+        arguments = call.get("arguments") or {}
+        name = arguments.get("name")
+        inner = arguments.get("arguments") or {}
+        if not isinstance(name, str) or not name or name == "tool_use":
+            return None, "tool_use needs a registered tool name other than tool_use.", ""
+        if name not in set(self.tools.names()):
+            return None, "Unknown tool: " + name + ". Use a name from the tool_use description.", ""
+        if arguments.get("describe"):
+            return None, "", self._tool_schema_text(name)
+        if not isinstance(inner, dict):
+            return None, "tool_use arguments must be an object.", ""
+        return {"id": call.get("id"), "name": name, "arguments": inner}, "", ""
+
+    def _tool_schema_text(self, name):
+        for item in self.tools.schemas():
+            if item["function"]["name"] != name:
+                continue
+            function = item["function"]
+            return json.dumps({"name": name, "description": function.get("description", ""),
+                               "parameters": function.get("parameters", {})}, ensure_ascii=False)
+        return "Unknown tool: " + name
+
+    def _envelope_result(self, call, text, success):
+        """Log a tool_use envelope answer that did not run a registered tool."""
+        arguments = call.get("arguments") or {}
+        call_id = call.get("id") or uuid.uuid4().hex
+        self.log.append("tool", json.dumps({"name": "tool_use", "arguments": arguments}),
+                        self._row_meta(call_id=call_id, name="tool_use",
+                                       provenance=source("agent_inference", tool="tool_use")))
+        echo_meta = self._row_meta(call_id=call_id, success=success, blocked=not success,
+                                   name="tool_use",
+                                   provenance=source("tool_data", tool="tool_use", owner="built-in",
+                                                     call_id=call_id))
+        echo = self.log.append("echo", text, echo_meta)
+        echo_meta["provenance"]["record"] = echo.i
+        return {"id": call_id, "name": "tool_use", "tool": "tool_use", "arguments": arguments,
+                "result": text, "output": text, "success": success, "blocked": not success,
+                "error": None if success else text, "image": None, "images": [], "diffs": [],
+                "provenance": echo_meta["provenance"], "record_index": echo.i}
+
+    def _prune_tool_history(self, messages):
+        """Trim older tool results in the model-facing history; the log keeps the original.
+
+        The newest result stays whole because the step that asked for it is
+        still reasoning about it. Everything older keeps its head and tail
+        with a marker, which is what keeps a many-step turn from resending
+        every earlier full result on every step.
+        """
+        limit = self.config.tools.history_result_chars
+        if limit <= 0:
+            return
+        newest_seen = False
+        for message in reversed(messages):
+            if message.get("role") != "tool":
+                continue
+            if not newest_seen:
+                newest_seen = True
+                continue
+            content = message.get("content")
+            if isinstance(content, str) and len(content) > limit:
+                message["content"] = clip_output(content, limit)
+
+    def _note_usage(self, response):
+        """Keep the provider's own prompt count as the anchor for the next estimate."""
+        usage = response.get("usage") if isinstance(response, dict) else None
+        if not isinstance(usage, dict):
+            return
+        prompt = usage.get("prompt_tokens")
+        if not isinstance(prompt, int) or prompt <= 0:
+            return
+        self._last_usage = {"prompt_tokens": prompt}
+
+    def _prompt_budget(self, messages, schema):
+        """What this turn's first request sends, by component, in bytes.
+
+        The token estimate anchors to the last provider prompt count over the
+        last measured budget, so it follows the real tokenizer instead of a
+        fixed four characters per token.
+        """
+        sizes: dict = dict(self._last_components)
+        named = ("system", "tools_block", "inherited", "gist", "state", "message")
+        counted = 0
+        for name in named:
+            counted += sizes.get(name, 0)
+        extra = 0
+        for index, message in enumerate(messages):
+            if index < self._context_base_messages:
+                continue
+            extra += self._message_bytes(message)
+        sizes["attachments"] = extra
+        sizes["tools_schema"] = len(json.dumps(schema or [], ensure_ascii=False).encode("utf-8"))
+        total = counted + extra + sizes["tools_schema"]
+        prompt_tokens = self._last_usage.get("prompt_tokens")
+        anchor = 0
+        ratio = 0.0
+        if isinstance(prompt_tokens, int) and prompt_tokens > 0 and self._last_budget_bytes > 0:
+            anchor = prompt_tokens
+            ratio = prompt_tokens / self._last_budget_bytes
+        sizes["total"] = total
+        sizes["estimated_tokens"] = int(total * ratio) if ratio else total // 4
+        sizes["anchor_prompt_tokens"] = anchor
+        sizes["anchor_ratio"] = round(ratio, 4)
+        sizes["tools"] = len(schema or [])
+        return sizes
 
     def run_turn(self, message, turn_meta=None, *, is_cancelled=None):
         """Run one turn.
@@ -821,7 +1023,7 @@ class GoblinSession:
                 with self._steer_lock:
                     self._steers = []
                     self._steer_open = True
-                schema = self.tools.schemas()
+                schema = self._route_schema()
                 notes, images = self._attachment_content(attached)
                 shown = message
                 if input_origin != 'direct_user':
@@ -833,6 +1035,37 @@ class GoblinSession:
                 self.view.defer_merges()
                 view_deferred = True
                 messages = self._context_messages(gist, schema, shown, images, system_prompt, notes)
+                budget = self._prompt_budget(messages, schema)
+                self.last_prompt_budget = budget
+                self._last_budget_bytes = budget["total"]
+                limit = self.config.prompt_budget.max_bytes
+                if limit and budget["total"] > limit:
+                    # One deterministic reduction before refusing: the newest
+                    # gist lines that fit the view low watermark.
+                    smaller = self.view.prompt_render(self.config.view.low_bytes)
+                    if smaller != gist:
+                        gist = smaller
+                        self._context_gist_bytes = len(gist.encode("utf-8"))
+                        messages = self._context_messages(gist, schema, shown, images, system_prompt, notes)
+                        budget = self._prompt_budget(messages, schema)
+                        self.last_prompt_budget = budget
+                        self._last_budget_bytes = budget["total"]
+                if limit and budget["total"] > limit:
+                    components = ", ".join(
+                        "%s=%s" % (name, budget.get(name))
+                        for name in ("system", "tools_block", "inherited", "gist",
+                                     "state", "message", "attachments", "tools_schema"))
+                    self.log.append("note", "Prompt over budget: " + json.dumps(budget, sort_keys=True),
+                                    {"prompt_budget": budget})
+                    raise BackendError(
+                        "Prompt is over the configured budget (%d > %d bytes; %s). "
+                        "Raise advanced.prompt.max_bytes, or let compaction shrink the history, "
+                        "before retrying." % (budget["total"], limit, components),
+                        kind="prompt_budget")
+                if (self.config.prompt_budget.budget_note_bytes
+                        and budget["total"] >= self.config.prompt_budget.budget_note_bytes):
+                    self.log.append("note", "Prompt budget: " + json.dumps(budget, sort_keys=True),
+                                    {"prompt_budget": budget})
                 while True:
                     self._drain_work(messages)
                     self._drain_steers(messages)
@@ -842,6 +1075,7 @@ class GoblinSession:
                         return reply
                     try:
                         response = self.log.redact(self._chat(messages, schema))
+                        self._note_usage(response)
                     except Exception:
                         stopped = self._interrupted()
                         if stopped:
@@ -889,7 +1123,14 @@ class GoblinSession:
                         if stopped:
                             reply = stopped
                             return reply
-                        output, record, contexts = self._call_tool(call)
+                        inner, envelope_error, describe_text = self._unwrap_tool_use(call)
+                        if envelope_error or describe_text:
+                            text = envelope_error if envelope_error else describe_text
+                            record = self._envelope_result(call, text, success=not envelope_error)
+                            output = text
+                            contexts = []
+                        else:
+                            output, record, contexts = self._call_tool(inner)
                         tool_records.append(record)
                         messages.append({"role": "tool", "tool_call_id": call["id"], "content": envelope(output, record["provenance"])})
                         batch_contexts.extend(contexts)
