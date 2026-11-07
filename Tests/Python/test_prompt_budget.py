@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "Tests" / "Python"))
 sys.path.insert(0, str(ROOT / "Runtime"))
 
 from goblin_core.backend import BackendError
+from goblin_core.attachments import store as store_attachment
 from test_session import FakeBackend, durable_rows, make_session
 
 
@@ -206,7 +207,7 @@ class PromptBudgetTests(unittest.TestCase):
             finally:
                 session.close()
 
-    def test_initial_attachments_are_counted_once_and_refused(self):
+    def test_initial_attachments_are_counted_once(self):
         cases = [
             (["é" * 50000], []),
             ([], [{"caption": "Picture", "data_url": "data:image/png;base64," + "A" * 100000}]),
@@ -216,21 +217,22 @@ class PromptBudgetTests(unittest.TestCase):
             with self.subTest(images=bool(images), notes=bool(notes)), tempfile.TemporaryDirectory() as temp:
                 backend = CapturingBackend([])
                 session, _ = make_session(temp, backend,
-                                          advanced={"prompt": {"max_bytes": 45000}})
+                                          advanced={"prompt": {"max_bytes": 60000}})
                 try:
                     session._attachment_content = lambda refs: (notes, images)
                     schema = session._route_schema()
-                    messages = session._context_messages("", schema, "Read this.", images,
-                                                         session._system_prompt(), notes)
-                    attachment_messages = messages[-(len(notes) + len(images)):]
-                    expected = sum(len(json.dumps(item, ensure_ascii=False).encode("utf-8"))
-                                   for item in attachment_messages)
+                    system = session._system_prompt()
+                    messages = session._context_messages("", schema, "Read this.", images, system, notes)
+                    attachment_count = len(notes) + len(images)
+                    expected = 0
+                    for item in messages[-attachment_count:]:
+                        expected += len(json.dumps(item, ensure_ascii=False).encode("utf-8"))
                     budget = session._prompt_budget(messages, schema)
                     self.assertEqual(budget["attachments"], expected)
                     rebuilt = session._context_messages("smaller gist", schema, "Read this.", images,
-                                                        session._system_prompt(), notes)
+                                                        system, notes)
                     self.assertEqual(session._prompt_budget(rebuilt, schema)["attachments"], expected)
-                    if expected > 45000:
+                    if expected > 60000:
                         with self.assertRaises(BackendError) as caught:
                             session.run_turn("Read this.")
                         self.assertEqual(caught.exception.kind, "prompt_budget")
@@ -239,6 +241,31 @@ class PromptBudgetTests(unittest.TestCase):
                         session.run_turn("Read this.")
                         self.assertEqual(len(backend.messages), 1)
                         self.assertEqual(session.last_prompt_budget["attachments"], expected)
+                    plain = session._context_messages("", schema, "Read this.", [], system)
+                    self.assertEqual(session._prompt_budget(plain, schema)["attachments"], 0)
+                finally:
+                    session.close()
+
+    def test_stored_text_attachment_enforces_limit_and_zero_disables_it(self):
+        for limit in (60000, 0):
+            with self.subTest(limit=limit), tempfile.TemporaryDirectory() as temp:
+                backend = CapturingBackend([])
+                session, _ = make_session(temp, backend,
+                                          advanced={"prompt": {"max_bytes": limit}})
+                try:
+                    ref = store_attachment(session.root, ("é" * 12000).encode("utf-8"),
+                                           "notes.txt", "text/plain")
+                    if limit:
+                        with self.assertRaises(BackendError) as caught:
+                            session.run_turn("Read this.", {"attachments": [ref]})
+                        self.assertEqual(caught.exception.kind, "prompt_budget")
+                        self.assertEqual(backend.messages, [])
+                        self.assertIn("attachments=", str(caught.exception))
+                    else:
+                        session.run_turn("Read this.", {"attachments": [ref]})
+                        self.assertEqual(len(backend.messages), 1)
+                    self.assertGreater(session.last_prompt_budget["attachments"], 24000)
+                    self.assertGreater(session.last_prompt_budget["total"], 60000)
                 finally:
                     session.close()
 
