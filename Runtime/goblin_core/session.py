@@ -592,11 +592,6 @@ class GoblinSession:
             for part in content:
                 if isinstance(part, dict) and isinstance(part.get('text'), str):
                     size += len(part['text'].encode('utf-8'))
-                elif isinstance(part, dict) and part.get('type') == 'image_url':
-                    image_url = part.get('image_url') or {}
-                    url = image_url.get('url') if isinstance(image_url, dict) else image_url
-                    if isinstance(url, str):
-                        size += len(url.encode('utf-8'))
         calls = message.get('tool_calls')
         if calls:
             size += len(json.dumps(calls, ensure_ascii=False).encode('utf-8'))
@@ -663,7 +658,8 @@ class GoblinSession:
             'gist': len(gist.encode('utf-8')),
             'state': len(turn_state.encode('utf-8')),
             'message': len(shown.encode('utf-8')),
-            'attachments': sum(self._message_bytes(item) for item in messages[attachment_start:]),
+            'attachments': sum(len(json.dumps(item, ensure_ascii=False).encode('utf-8'))
+                               for item in messages[attachment_start:]),
         }
         self._context_base_messages = len(messages)
         return messages
