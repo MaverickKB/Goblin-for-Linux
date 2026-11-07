@@ -592,6 +592,11 @@ class GoblinSession:
             for part in content:
                 if isinstance(part, dict) and isinstance(part.get('text'), str):
                     size += len(part['text'].encode('utf-8'))
+                elif isinstance(part, dict) and part.get('type') == 'image_url':
+                    image_url = part.get('image_url') or {}
+                    url = image_url.get('url') if isinstance(image_url, dict) else image_url
+                    if isinstance(url, str):
+                        size += len(url.encode('utf-8'))
         calls = message.get('tool_calls')
         if calls:
             size += len(json.dumps(calls, ensure_ascii=False).encode('utf-8'))
@@ -643,6 +648,7 @@ class GoblinSession:
                        '<parent-conversation>\n' + self._inherited_context + '\n</parent-conversation>')
             inherited_bytes = len(context.encode('utf-8'))
             messages.insert(2, {'role': 'user', 'content': envelope(context, source('historical_mixed', parent_scope=True))})
+        attachment_start = len(messages)
         for note in attachment_notes:
             messages.append({'role': 'user', 'content': envelope(note, source('attachment_data'))})
         for image in images:
@@ -657,6 +663,7 @@ class GoblinSession:
             'gist': len(gist.encode('utf-8')),
             'state': len(turn_state.encode('utf-8')),
             'message': len(shown.encode('utf-8')),
+            'attachments': sum(self._message_bytes(item) for item in messages[attachment_start:]),
         }
         self._context_base_messages = len(messages)
         return messages
@@ -938,7 +945,7 @@ class GoblinSession:
         counted = 0
         for name in named:
             counted += sizes.get(name, 0)
-        extra = 0
+        extra = sizes.get("attachments", 0)
         for index, message in enumerate(messages):
             if index < self._context_base_messages:
                 continue

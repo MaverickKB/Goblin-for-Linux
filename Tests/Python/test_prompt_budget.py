@@ -206,6 +206,48 @@ class PromptBudgetTests(unittest.TestCase):
             finally:
                 session.close()
 
+    def test_initial_attachments_are_counted_once_and_refused(self):
+        cases = [
+            (["é" * 50000], []),
+            ([], [{"caption": "Picture", "data_url": "data:image/png;base64," + "A" * 100000}]),
+            (["Document"], [{"caption": "Picture", "data_url": "data:image/png;base64,AAAA"}]),
+        ]
+        for notes, images in cases:
+            with self.subTest(images=bool(images), notes=bool(notes)), tempfile.TemporaryDirectory() as temp:
+                backend = CapturingBackend([])
+                session, _ = make_session(temp, backend,
+                                          advanced={"prompt": {"max_bytes": 45000}})
+                try:
+                    session._attachment_content = lambda refs: (notes, images)
+                    schema = session._route_schema()
+                    messages = session._context_messages("", schema, "Read this.", images,
+                                                         session._system_prompt(), notes)
+                    attachment_messages = messages[-(len(notes) + len(images)):]
+                    expected = 0
+                    for item in attachment_messages:
+                        content = item["content"]
+                        if isinstance(content, str):
+                            expected += len(content.encode("utf-8"))
+                        else:
+                            expected += sum(len(part.get("text", part.get("image_url", {}).get("url", "")).encode("utf-8"))
+                                            for part in content)
+                    budget = session._prompt_budget(messages, schema)
+                    self.assertEqual(budget["attachments"], expected)
+                    rebuilt = session._context_messages("smaller gist", schema, "Read this.", images,
+                                                        session._system_prompt(), notes)
+                    self.assertEqual(session._prompt_budget(rebuilt, schema)["attachments"], expected)
+                    if expected > 45000:
+                        with self.assertRaises(BackendError) as caught:
+                            session.run_turn("Read this.")
+                        self.assertEqual(caught.exception.kind, "prompt_budget")
+                        self.assertEqual(backend.messages, [])
+                    else:
+                        session.run_turn("Read this.")
+                        self.assertEqual(len(backend.messages), 1)
+                        self.assertEqual(session.last_prompt_budget["attachments"], expected)
+                finally:
+                    session.close()
+
     def test_max_bytes_zero_disables_admission(self):
         with tempfile.TemporaryDirectory() as temp:
             backend = CapturingBackend([{"content": "done", "tool_calls": []}])
